@@ -1,7 +1,7 @@
-(** Clerial main program *)
+(** Spartan main program *)
 
 (** The usage message. *)
-let usage = "Usage: clerical [option] ... [file] ..."
+let usage = "Usage: spartan [option] ... [file] ..."
 
 (** A list of files to be loaded and run, together with information on whether they should
     be loaded in interactive mode. *)
@@ -71,7 +71,7 @@ let options = Arg.align [
 
 (** Interactive toplevel *)
 let interactive_shell state =
-  Format.printf "Clerical %s@." Build.version ;
+  Format.printf "Spartan %s@." Build.version ;
 
   let rec loop state =
     let state =

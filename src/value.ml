@@ -3,14 +3,14 @@
 (** Values stored in variables *)
 type value =
   | VBoolean of bool
-  | VInteger of Mpzf.t
-  | VReal of Real.t
+  | VInteger of int
+  | VReal of float
 
 (** Results of computations *)
 type result =
   | CBoolean of bool
-  | CInteger of Mpzf.t
-  | CReal of Real.t
+  | CInteger of int
+  | CReal of float
   | CNone
 
 (** Embed a value into results *)
@@ -64,12 +64,12 @@ let computation_as_unit = function
 let print_value v ppf =
   match v with
   | VBoolean b -> Format.fprintf ppf "%b" b
-  | VInteger k -> Format.fprintf ppf "%t" (fun ppf -> Mpz.print ppf k)
-  | VReal r -> Format.fprintf ppf "%s" (Real.to_string r)
+  | VInteger k -> Format.fprintf ppf "FOO"
+  | VReal r -> Format.fprintf ppf "BAR"
 
 let print_result v ppf =
   match v with
   | CNone -> Format.fprintf ppf ""
   | CBoolean b -> Format.fprintf ppf "%b" b
-  | CInteger k -> Format.fprintf ppf "%t" (fun ppf -> Mpz.print ppf k)
-  | CReal r -> Format.fprintf ppf "%s" (Real.to_string r)
+  | CInteger k -> Format.fprintf ppf "FOO"
+  | CReal r -> Format.fprintf ppf "BAR"

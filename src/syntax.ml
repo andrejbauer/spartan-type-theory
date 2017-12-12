@@ -9,7 +9,7 @@ type comp = comp' Location.located
 and comp' =
   | Var of index
   | Boolean of bool
-  | Integer of Mpzf.t
+  | Integer of int
   | Float of string
   | Apply of index * comp list
   | Skip

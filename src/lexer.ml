@@ -67,7 +67,7 @@ let loc_of lex = Location.make lex.Ulexbuf.pos_start lex.Ulexbuf.pos_end
 let safe_int_of_string lexbuf =
   let s = Ulexbuf.lexeme lexbuf in
   try
-    Mpz.of_string s
+    int_of_string s
   with
     Invalid_argument _ -> Ulexbuf.error ~loc:(loc_of lexbuf) (Ulexbuf.BadNumeral s)
 

@@ -104,7 +104,6 @@ let as_value ~loc v =
     precision level [n], and returns the new stack and the computed value. *)
 let rec comp ~prec stack {Location.data=c; Location.loc} : stack * Value.result =
   if !Config.trace then print_trace ~loc ~prec stack ;
-  let {Runtime.prec_mpfr; Runtime.prec_lim} = prec in
   begin match c with
 
   | Syntax.Var k ->
@@ -120,10 +119,7 @@ let rec comp ~prec stack {Location.data=c; Location.loc} : stack * Value.result 
      stack, Value.CInteger k
 
   | Syntax.Float s ->
-     let rl = Dyadic.of_string ~prec:prec_mpfr ~round:Dyadic.down s in
-     let ru = Dyadic.of_string ~prec:prec_mpfr ~round:Dyadic.up s in
-     let r = Real.make rl ru in
-     stack, Value.CReal r
+     stack, Value.CReal 4.2
 
   | Syntax.Apply (k, es) ->
      begin match lookup_fun k stack with
@@ -220,17 +216,7 @@ let rec comp ~prec stack {Location.data=c; Location.loc} : stack * Value.result 
      end
 
   | Syntax.Lim (x, e) ->
-     let stack' = push_ro x (Value.VInteger (Mpzf.of_int prec_lim)) stack in
-     let v = comp_ro ~prec stack' e in
-     begin match Value.computation_as_real v with
-     | None -> Runtime.error ~loc:e.Location.loc Runtime.RealExpected
-     | Some r ->
-           let err = Dyadic.shift ~prec:prec_mpfr ~round:Dyadic.up Dyadic.one (-prec_lim) in
-           let rl = Dyadic.sub ~prec:prec_mpfr ~round:Dyadic.down (Real.lower r) err
-           and ru = Dyadic.add ~prec:prec_mpfr ~round:Dyadic.up (Real.upper r) err in
-           let r = Real.make rl ru in
-           stack, Value.CReal r
-     end
+     failwith "not implemented"
   end
 
 and comp_ro ~prec stack c : Value.result = snd (comp ~prec (make_ro stack) c)
@@ -239,16 +225,11 @@ and comp_ro_value ~prec stack c =
   as_value ~loc:(c.Location.loc) (comp_ro ~prec stack c)
 
 let topcomp ~max_prec stack ({Location.loc;_} as c) =
-  let require k r =
-    let err = Dyadic.sub ~prec:12 ~round:Dyadic.up (Real.upper r) (Real.lower r) in
-    let req = Dyadic.shift ~prec:12 ~round:Dyadic.down Dyadic.one (-k) in
-    if not (Dyadic.lt err req) then raise Runtime.Abort
-  in
   let rec loop prec =
     begin
       try
         match comp_ro ~prec stack c with
-        | (Value.CReal r) as v -> require !Config.out_prec r ; v
+        | (Value.CReal r) as v -> v
         | (Value.CNone | Value.CBoolean _ | Value.CInteger _) as v -> v
       with
         Runtime.Abort ->
@@ -282,18 +263,6 @@ let topfun stack xs c =
   in
   push_fun g stack
 
-let topexternal ~loc stack s =
-  match External.lookup s with
-  | None -> error ~loc (UnknownExternal s)
-  | Some g ->
-     let h ~loc ~prec vs =
-       try
-         g ~prec vs
-       with
-       | Error {Location.data=err; loc=loc'} -> raise (Error (Location.locate ~loc:loc' (CallTrace (loc, err))))
-     in
-     push_fun h stack
-
 let rec toplevel ~quiet runtime {Location.data=c; Location.loc} =
   match c with
   | Syntax.TyTopDo (c, t) ->
@@ -315,9 +284,6 @@ let rec toplevel ~quiet runtime {Location.data=c; Location.loc} =
      runtime
 
   | Syntax.TyTopExternal (f, s, ft) ->
-     let runtime = topexternal ~loc runtime s in
-     if not quiet then
-       Format.printf "external %s : %t@." f (Type.print_funty ft) ;
      runtime
 
   | Syntax.TyTopFile cmds ->

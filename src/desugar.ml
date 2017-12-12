@@ -196,7 +196,7 @@ let rec toplevel' ctx = function
        ctx, Syntax.TopFile cmds
 
     | Input.TopPrecision p ->
-       ctx, Syntax.TopPrecision (Mpz.get_int p)
+       ctx, Syntax.TopPrecision (p)
 
   in
   let ctx, c = toplevel' ctx c in
