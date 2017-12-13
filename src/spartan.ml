@@ -47,26 +47,6 @@ let options = Arg.align [
     ("-l",
      Arg.String (fun str -> add_file true str),
      "<file> Load <file> into the initial environment");
-
-    ("--init-prec",
-     Arg.Set_int Config.init_prec,
-     "<int> Set initial precision for MFPR");
-
-    ("--max-prec",
-     Arg.Set_int Config.max_prec,
-     "<int> Set maximum precision for MPFR");
-
-    ("--out-prec",
-     Arg.Set_int Config.out_prec,
-     "<int> Set precision for printing reals at top level");
-
-    ("--trace",
-     Arg.Set Config.trace,
-     " Print trace information during evaluation");
-
-    ("--trace",
-     Arg.Set Config.verbose,
-     " Print information about precision during computation")
   ]
 
 (** Interactive toplevel *)
@@ -83,9 +63,7 @@ let interactive_shell state =
       | Desugar.Error {Location.data=err; Location.loc} ->
          Print.message ~loc "Syntax error" "%t" (Desugar.print_error err) ; state
       | Typecheck.Error {Location.data=err; Location.loc} ->
-        Print.message ~loc "Type error" "%t" (Typecheck.print_error err) ; state
-      | Runtime.Error {Location.data=err; Location.loc} ->
-         Print.message ~loc "Runtime error" "%t" (Runtime.print_error err) ; state
+        Print.message ~loc "Error" "%t" (Typecheck.print_error err) ; state
       | Sys.Break ->
          Print.message ~loc:Location.Nowhere "Runtime" "interrupted" ; state
     in loop state
@@ -157,5 +135,3 @@ let main =
      Print.message ~loc "Syntax error" "%t" (Desugar.print_error err)
   | Typecheck.Error {Location.data=err; Location.loc} ->
      Print.message ~loc "Type error" "%t" (Typecheck.print_error err)
-  | Runtime.Error {Location.data=err; Location.loc} ->
-     Print.message ~loc "Runtime error" "%t" (Runtime.print_error err)

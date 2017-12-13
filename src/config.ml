@@ -14,16 +14,3 @@ let wrapper = ref (Some ["rlwrap"; "ledit"])
 let max_boxes = ref 42
 
 let columns = ref (Format.get_margin ())
-
-(** Initial MPFR precision *)
-let init_prec = ref 16
-
-(** Maximal MPFR precision *)
-let max_prec = ref 10240
-
-(** How many output precisions we print for reals. *)
-let out_prec = ref 5
-
-let trace = ref false
-
-let verbose = ref false

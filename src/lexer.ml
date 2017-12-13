@@ -1,31 +1,7 @@
-open Parser
-
 let reserved = [
-  ("and", AND) ;
-  ("begin", BEGIN) ;
-  ("bool", BOOL) ;
-  ("case", CASE) ;
-  ("command", COMMAND) ;
-  ("do", DO) ;
-  ("else", ELSE) ;
-  ("end", END) ;
-  ("external", EXTERNAL) ;
-  ("false", BOOLEAN false) ;
-  ("function", FUNCTION) ;
-  ("if", IF) ;
-  ("in", IN) ;
-  ("int", INT) ;
-  ("let", LET) ;
-  ("lim", LIM) ;
-  ("load", LOAD) ;
-  ("real", REAL) ;
-  ("precision", PRECISION) ;
-  ("skip", SKIP) ;
-  ("then", THEN) ;
-  ("trace", TRACE) ;
-  ("true", BOOLEAN true) ;
-  ("var", VAR) ;
-  ("while", WHILE)
+  ("Definition", Parser.DEFINITION) ;
+  ("Load", Parser.LOAD) ;
+  ("Type", Parser.TYPE)
 ]
 
 let name =
@@ -34,11 +10,10 @@ let name =
                       | 185 | 178 | 179 | 8304 .. 8351 (* sub-/super-scripts *)
                       | '0'..'9' | '\'')) | math]
 
+(*
 let digit = [%sedlex.regexp? '0'..'9']
 let numeral = [%sedlex.regexp? Opt '-', Plus digit]
-
-let hexdigit = [%sedlex.regexp? ('0'..'9' | 'a'..'f' | 'A'..'F')]
-let float = [%sedlex.regexp? Opt '-', Opt ("0x" | "0X" | "0b" | "0B"), Plus hexdigit, '.', Star hexdigit]
+*)
 
 let symbolchar = [%sedlex.regexp?  ('!' | '$' | '%' | '&' | '*' | '+' | '-' | '.' | '/' | ':' | '<' | '=' | '>' | '?' | '@' | '^' | '|' | '~')]
 
@@ -55,7 +30,9 @@ let end_longcomment= [%sedlex.regexp? "*)"]
 let newline = [%sedlex.regexp? ('\n' | '\r' | "\n\r" | "\r\n")]
 let hspace  = [%sedlex.regexp? (' ' | '\t' | '\r')]
 
+(*
 let quoted_string = [%sedlex.regexp? '"', Star (Compl '"'), '"']
+*)
 
 let update_eoi ({ Ulexbuf.pos_end; line_limit;_ } as lexbuf) =
   match line_limit with None -> () | Some line_limit ->
@@ -72,7 +49,7 @@ let safe_int_of_string lexbuf =
     Invalid_argument _ -> Ulexbuf.error ~loc:(loc_of lexbuf) (Ulexbuf.BadNumeral s)
 
 let rec token ({ Ulexbuf.end_of_input;_ } as lexbuf) =
-  if end_of_input then EOF else token_aux lexbuf
+  if end_of_input then Parser.EOF else token_aux lexbuf
 
 and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   let f () = Ulexbuf.update_pos lexbuf in
@@ -80,6 +57,7 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | newline                  -> f (); Ulexbuf.new_line lexbuf; token_aux lexbuf
   | start_longcomment        -> f (); comments 0 lexbuf
   | Plus hspace              -> f (); token_aux lexbuf
+(*
   | quoted_string            -> f ();
      let s = Ulexbuf.lexeme lexbuf in
      let l = String.length s in
@@ -87,34 +65,41 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
      String.iter (fun c -> if c = '\n' then incr n) s;
      Ulexbuf.new_line ~n:!n lexbuf;
      QUOTED_STRING (String.sub s 1 (l - 2))
-  | '('                      -> f (); LPAREN
-  | ')'                      -> f (); RPAREN
-  | '|'                      -> f (); BAR
-  | "=>" | 8658 | 10233      -> f (); DARROW
-  | "->" | 8594 | 10230      -> f (); ARROW
-  | "="                      -> f (); EQ
-  | ":="                     -> f (); COLONEQ
+*)
+  | '('                      -> f (); Parser.LPAREN
+  | ')'                      -> f (); Parser.RPAREN
+  | '.'                      -> f (); Parser.PERIOD
+  (* | '|'                      -> f (); BAR
+   * | "=>" | 8658 | 10233      -> f (); DARROW
+   * | "->" | 8594 | 10230      -> f (); ARROW
+   * | "="                      -> f (); EQ *)
+  | ":="                     -> f (); Parser.COLONEQ
+
+(*
   | ','                      -> f (); COMMA
   | ':'                      -> f (); COLON
   | ';'                      -> f (); SEMICOLON
+*)
+
   (* We record the location of operators here because menhir cannot handle %infix and
      mark_location simultaneously, it seems. *)
-  | prefixop                 -> f (); PREFIXOP (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop0                 -> f (); INFIXOP0 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop1                 -> f (); INFIXOP1 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop2                 -> f (); INFIXOP2 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | prefixop                 -> f (); Parser.PREFIXOP (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | infixop0                 -> f (); Parser.INFIXOP0 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | infixop1                 -> f (); Parser.INFIXOP1 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | infixop2                 -> f (); Parser.INFIXOP2 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
   (* Comes before infixop3 because ** matches the infixop3 pattern too *)
-  | infixop4                 -> f (); INFIXOP4 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop3                 -> f (); INFIXOP3 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | infixop4                 -> f (); Parser.INFIXOP4 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | infixop3                 -> f (); Parser.INFIXOP3 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
 
-  | eof                      -> f (); EOF
+  | eof                      -> f (); Parser.EOF
   | name                     -> f ();
     let n = Ulexbuf.lexeme lexbuf in
     begin try List.assoc n reserved
-    with Not_found -> NAME n
+    with Not_found -> Parser.NAME n
     end
-  | float                    -> f (); let r = Ulexbuf.lexeme lexbuf in FLOAT r
+(*
   | numeral                  -> f (); let k = safe_int_of_string lexbuf in NUMERAL k
+*)
   | any -> f ();
      let w = Ulexbuf.lexeme lexbuf in
      let loc = loc_of lexbuf in
