@@ -9,4 +9,5 @@ type toplevel = toplevel' Location.located
 and toplevel' =
   | TopDefinition of Name.ident * expr
   | TopCheck of expr
+  | TopEval of expr
   | TopLoad of string

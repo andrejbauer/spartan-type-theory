@@ -2,12 +2,12 @@
 type state =
   {
     desugar : Desugar.context;
-    typecheck : Typecheck.context;
+    typecheck : Context.context;
   }
 
 let initial = {
     desugar = Desugar.initial;
-    typecheck = Typecheck.initial;
+    typecheck = Context.initial;
 }
 
 let exec_interactive {desugar; typecheck} =

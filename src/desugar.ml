@@ -71,6 +71,10 @@ let rec toplevel' ctx = function
        let e = expr ctx e in
        ctx, Syntax.TopCheck e
 
+    | Input.TopEval e ->
+       let e = expr ctx e in
+       ctx, Syntax.TopEval e
+
     | Input.TopLoad fn ->
        let ctx, cmds = load ctx fn in
        ctx, Syntax.TopLoad cmds
