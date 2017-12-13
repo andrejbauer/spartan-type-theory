@@ -27,6 +27,7 @@
 %token <string> QUOTED_STRING
 %token LOAD
 %token DEFINITION
+%token CHECK
 
 (* End of input token *)
 %token EOF
@@ -59,6 +60,7 @@ commandline:
 topcomp: mark_location(plain_topcomp) { $1 }
 plain_topcomp:
   | DEFINITION x=var_name COLONEQ e=term { Input.TopDefinition (x, e) }
+  | CHECK e=term                         { Input.TopCheck e }
   | LOAD fn=QUOTED_STRING                { Input.TopLoad fn }
 
 (* Main syntax tree *)

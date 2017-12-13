@@ -1,5 +1,6 @@
 let reserved = [
   ("Definition", Parser.DEFINITION) ;
+  ("Check", Parser.CHECK) ;
   ("Load", Parser.LOAD) ;
   ("Type", Parser.TYPE)
 ]
