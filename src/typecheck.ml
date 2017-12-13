@@ -1,11 +1,19 @@
 (** Spratan types. *)
 
 (* Typing context *)
+
+(* A de Bruijn index is bound to a type and a value. *)
 type entry = Value.expr * Value.ty
 
-type context = entry list
+type definition = Name.ident * Value.expr
 
-let initial = []
+type context =
+  {
+    idents : entry list ;
+    defs : definition list
+  }
+
+let initial = { idents = [] ; defs = [] }
 
 (** Type errors *)
 type type_error =
@@ -21,16 +29,19 @@ let rec print_error err ppf =
   match err with
   | InvalidIndex k -> Format.fprintf ppf "invalid de Bruijn index %d, please report" k
 
-(** Extend the context with a definition. *)
-let extend e t ctx = (e, t) :: ctx
+(** Extend the context with an identifier. *)
+let extend_ident e t ctx = { ctx with idents = (e, t) :: ctx.idents }
+
+(** Extend the context with a definitional equality. *)
+let extend_def x e ctx = { ctx with defs = (x, e) :: ctx.defs }
 
 (** Lookup the type of an identifier *)
-let lookup ~loc k ctx =
+let lookup ~loc k {idents; _} =
   let rec search m = function
     | [] -> error ~loc (InvalidIndex k)
     | et :: lst -> if m = 0 then et else search (m - 1) lst
   in
-  search k ctx
+  search k idents
 
 let check_equal_ty ctx ty1 ty2 = ()
 
@@ -38,8 +49,7 @@ let rec infer ctx {Location.data=e'; loc} =
   match e' with
 
   | Syntax.Var k ->
-     let e, ty = lookup ~loc k ctx in
-     e, ty
+     lookup ~loc k ctx
 
   | Syntax.Type ->
      Value.Type, Value.ty_Type
@@ -57,11 +67,13 @@ let rec toplevel ~quiet ctx {Location.data=tc; loc} =
   let ctx = toplevel' ~quiet ctx tc in
   ctx
 
-and toplevel' ~quiet ctx = function
+and toplevel' ~quiet (ctx : context) = function
   | Syntax.TopDefinition (x, e) ->
      let e, ty = infer ctx e in
+     let ctx = extend_ident (Value.Var x) ty ctx in
+     let ctx = extend_def x e ctx in
      if not quiet then Format.printf "%s is defined.@." x ;
-     extend e ty ctx
+     ctx
 
   | Syntax.TopCheck e ->
      let e, ty = infer ctx e in

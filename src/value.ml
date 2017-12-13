@@ -12,6 +12,6 @@ let ty_Type = Ty Type
 let print_expr v ppf =
   match v with
   | Type -> Format.fprintf ppf "Type"
-  | Var x -> Format.fprintf ppf "[%s]" x
+  | Var x -> Format.fprintf ppf "%s" x
 
 let print_ty (Ty t) ppf = print_expr t ppf
