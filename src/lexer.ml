@@ -4,8 +4,12 @@ let reserved = [
   ("Definition", Parser.DEFINITION) ;
   ("Eval", Parser.EVAL) ;
   ("fun", Parser.LAMBDA) ;
+  ("λ", Parser.LAMBDA) ;
   ("Load", Parser.LOAD) ;
   ("forall", Parser.PROD) ;
+  ("∀", Parser.PROD) ;
+  ("Π", Parser.PROD) ;
+  ("∏", Parser.PROD) ;
   ("Type", Parser.TYPE)
 ]
 
