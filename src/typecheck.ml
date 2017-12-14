@@ -41,7 +41,7 @@ let rec infer ctx {Location.data=e'; loc} =
      let x' = Value.new_atom x in
      let ctx  = Context.extend_ident x' t ctx in
      let u = check_ty ctx u in
-     let u = Value.unabstract_ty x u in
+     let u = Value.unabstract_ty x' u in
      Value.Prod ((x, t), u),
      Value.ty_Type
 
@@ -76,7 +76,7 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Var _
   | Syntax.Type ->
      let e, ty' = infer ctx e in
-     if Equal.ty ~loc ctx ty ty'
+     if Equal.ty ctx ty ty'
      then
        e
      else

@@ -22,13 +22,19 @@ let extend_ident a t ctx = { ctx with idents = (a, t) :: ctx.idents }
 (** Extend the context with a definitional equality. *)
 let extend_def a e ctx = { ctx with defs = (a, e) :: ctx.defs }
 
-(** Lookup the type and value of an identifier *)
+(** Lookup the type and value of a de Bruijn index *)
 let lookup k {idents; _} =
   let rec search m = function
     | [] -> None
     | et :: lst -> if m = 0 then Some et else search (m - 1) lst
   in
   search k idents
+
+let lookup_atom_ty a {idents; _} =
+  try
+    Some (List.assoc a idents)
+  with
+    Not_found -> None
 
 (** Lookup a definition. *)
 let lookup_def x {defs; _} =

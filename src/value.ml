@@ -18,7 +18,7 @@ and ty = Ty of expr
 and 'a abstraction = (Name.ident * ty) * 'a
 
 (** Create an atom from an identifier. *)
-let new_atom =
+let new_atom : Name.ident -> atom =
   let k = ref (-1) in
   fun x -> incr k ; (x, !k)
 
@@ -83,9 +83,9 @@ and abstract_ty ?(lvl=0) x (Ty t) =
   let t = abstract ~lvl x t in
   Ty t
 
-let unabstract x e = instantiate 0 (Atom (new_atom x)) e
+let unabstract a e = instantiate 0 (Atom a) e
 
-let unabstract_ty x (Ty t) = Ty (instantiate 0 (Atom (new_atom x)) t)
+let unabstract_ty a (Ty t) = Ty (instantiate 0 (Atom a) t)
 
 let rec occurs k = function
   | Bound j -> j = k
@@ -119,11 +119,14 @@ let print_binders ~penv print_u print_v xus ppf =
 
 let print_atom (x, _) ppf = Name.print_ident x ppf
 
+let print_debruijn xs k ppf =
+  let x = List.nth xs k in
+  Name.print_ident x ppf
+
 let rec print_expr ?max_level ~penv e ppf =
     print_expr' ~penv ?max_level e ppf
 
 and print_expr' ~penv ?max_level e ppf =
-  let print ?at_level = Print.print ?max_level ?at_level ppf in
     match e with
       | Type ->
         Format.fprintf ppf "Type"
@@ -131,7 +134,7 @@ and print_expr' ~penv ?max_level e ppf =
       | Atom x ->
         print_atom x ppf
 
-      | Bound k -> print "INDEX[%d]" k
+      | Bound k -> print_debruijn penv k ppf
 
       | Lambda a -> print_lambda ?max_level ~penv a ppf
 
