@@ -33,6 +33,7 @@
 %token DEFINITION
 %token CHECK
 %token EVAL
+%token AXIOM
 
 (* End of input token *)
 %token EOF
@@ -64,10 +65,11 @@ commandline:
 (* Things that can be defined on toplevel. *)
 topcomp: mark_location(plain_topcomp) { $1 }
 plain_topcomp:
+  | LOAD fn=QUOTED_STRING                { Input.TopLoad fn }
   | DEFINITION x=var_name COLONEQ e=term { Input.TopDefinition (x, e) }
   | CHECK e=term                         { Input.TopCheck e }
   | EVAL e=term                          { Input.TopEval e }
-  | LOAD fn=QUOTED_STRING                { Input.TopLoad fn }
+  | AXIOM x=var_name COLON e=term        { Input.TopAxiom (x, e) }
 
 (* Main syntax tree *)
 term : mark_location(plain_term) { $1 }

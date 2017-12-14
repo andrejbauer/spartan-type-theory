@@ -14,7 +14,8 @@ and 'a abstraction = (Name.ident list * ty) list * 'a
 
 type toplevel = toplevel' Location.located
 and toplevel' =
+  | TopLoad of string
   | TopDefinition of Name.ident * expr
   | TopCheck of expr
   | TopEval of expr
-  | TopLoad of string
+  | TopAxiom of Name.ident * expr

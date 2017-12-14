@@ -1,4 +1,5 @@
 let reserved = [
+  ("Axiom", Parser.AXIOM) ;
   ("Check", Parser.CHECK) ;
   ("Definition", Parser.DEFINITION) ;
   ("Eval", Parser.EVAL) ;

@@ -1,7 +1,7 @@
 (* Typing context *)
 
-(* A de Bruijn index is bound to a type and a value. *)
-type entry = Value.expr * Value.ty
+(* A de Bruijn index is bound to a type and an atom. *)
+type entry = Value.atom * Value.ty
 
 type definition = Value.atom * Value.expr
 
@@ -14,10 +14,10 @@ type context =
 let initial = { idents = [] ; defs = [] }
 
 (** Extend the context with an identifier. *)
-let extend_ident e t ctx = { ctx with idents = (e, t) :: ctx.idents }
+let extend_ident a t ctx = { ctx with idents = (a, t) :: ctx.idents }
 
 (** Extend the context with a definitional equality. *)
-let extend_def x e ctx = { ctx with defs = (x, e) :: ctx.defs }
+let extend_def a e ctx = { ctx with defs = (a, e) :: ctx.defs }
 
 (** Lookup the type and value of an identifier *)
 let lookup k {idents; _} =

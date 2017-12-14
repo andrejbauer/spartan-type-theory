@@ -19,10 +19,11 @@ and 'a abstraction = (Name.ident * ty) * 'a
 
 type toplevel = toplevel' Location.located
 and toplevel' =
+  | TopLoad of toplevel list
   | TopDefinition of Name.ident * expr
   | TopCheck of expr
   | TopEval of expr
-  | TopLoad of toplevel list
+  | TopAxiom of Name.ident * expr
 
 (** Shift all indices greter than or equal to [n] by [k]. *)
 let rec shift n k {Location.data=e'; loc} =

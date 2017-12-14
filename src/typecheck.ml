@@ -30,7 +30,7 @@ let rec infer ctx {Location.data=e'; loc} =
      begin
        match Context.lookup k ctx with
        | None -> error ~loc (InvalidIndex k)
-       | Some (e, t) -> (e, t)
+       | Some (a, t) -> Value.Atom a, t
      end
 
   | Syntax.Type ->
@@ -38,7 +38,8 @@ let rec infer ctx {Location.data=e'; loc} =
 
   | Syntax.Prod ((x, t), u) ->
      let t = check_ty ctx t in
-     let ctx  = Context.extend_ident (Value.Atom (Value.new_atom x)) t ctx in
+     let x' = Value.new_atom x in
+     let ctx  = Context.extend_ident x' t ctx in
      let u = check_ty ctx u in
      let u = Value.unabstract_ty x u in
      Value.Prod ((x, t), u),
@@ -47,7 +48,7 @@ let rec infer ctx {Location.data=e'; loc} =
   | Syntax.Lambda ((x, t), e) ->
      let t = check_ty ctx t in
      let x' = Value.new_atom x in
-     let ctx  = Context.extend_ident (Value.Atom x') t ctx in
+     let ctx  = Context.extend_ident x' t ctx in
      let e, u = infer ctx e in
      let e = Value.abstract x' e in
      let u = Value.abstract_ty x' u in
@@ -90,10 +91,14 @@ let rec toplevel ~quiet ctx {Location.data=tc; loc} =
   ctx
 
 and toplevel' ~quiet ctx = function
+
+  | Syntax.TopLoad lst ->
+     topfile ~quiet ctx lst
+
   | Syntax.TopDefinition (x, e) ->
      let e, ty = infer ctx e in
      let x' = Value.new_atom x in
-     let ctx = Context.extend_ident (Value.Atom x') ty ctx in
+     let ctx = Context.extend_ident x' ty ctx in
      let ctx = Context.extend_def x' e ctx in
      if not quiet then Format.printf "%t is defined.@." (Name.print_ident x) ;
      ctx
@@ -113,8 +118,12 @@ and toplevel' ~quiet ctx = function
        (Value.print_ty ty) ;
      ctx
 
-  | Syntax.TopLoad lst ->
-     topfile ~quiet ctx lst
+  | Syntax.TopAxiom (x, ty) ->
+     let ty = check_ty ctx ty in
+     let x' = Value.new_atom x in
+     let ctx = Context.extend_ident x' ty ctx in
+     if not quiet then Format.printf "%t is assumed.@." (Name.print_ident x) ;
+     ctx
 
 and topfile ~quiet ctx lst =
   let rec fold ctx = function

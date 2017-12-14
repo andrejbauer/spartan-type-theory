@@ -98,6 +98,10 @@ let rec toplevel ctx {Location.data=c; Location.loc=loc} =
 
 let rec toplevel' ctx = function
 
+    | Input.TopLoad fn ->
+       let ctx, cmds = load ctx fn in
+       ctx, Syntax.TopLoad cmds
+
     | Input.TopDefinition (x, e) ->
        begin match index x ctx with
        | Some _ -> error ~loc (AlreadyDefined x)
@@ -115,9 +119,11 @@ let rec toplevel' ctx = function
        let e = expr ctx e in
        ctx, Syntax.TopEval e
 
-    | Input.TopLoad fn ->
-       let ctx, cmds = load ctx fn in
-       ctx, Syntax.TopLoad cmds
+    | Input.TopAxiom (x, t) ->
+       let t = ty ctx t in
+       let ctx = extend x ctx in
+       ctx, Syntax.TopAxiom (x, t)
+
   in
   let ctx, c = toplevel' ctx c in
   ctx, Location.locate ~loc c
