@@ -1,0 +1,39 @@
+(* Church numerals. *)
+
+Axiom N : Type.
+Axiom Z : N.
+Axiom S : N → N.
+
+Definition numeral := ∏ (A : Type), (A → A) → (A → A).
+
+Eval numeral.
+
+Definition zero := (λ (A : Type) (f : A → A) (x : A) ⇒ x) : numeral.
+
+Definition succ := (λ (n : numeral) (A : Type) (f : A → A) (x : A) ⇒ f (n A f x)) : numeral → numeral.
+
+Definition one := succ zero : numeral.
+
+Definition two := succ one : numeral.
+
+Definition three := succ two : numeral.
+
+Definition five := succ (succ (succ (succ (succ zero)))).
+
+Definition ( + ) :=
+  (λ (m n : numeral) (A : Type) (f : A → A) (x : A) ⇒ m A f (n A f x)) : numeral → numeral → numeral.
+
+Definition ( * ) :=
+  (λ (m n : numeral) (A : Type) (f : A → A) (x : A) ⇒ m A (n A f) x) : numeral → numeral → numeral.
+
+Definition ten := five + five.
+
+Definition hundred := ten * ten.
+
+Definition thousand := hundred * ten.
+
+Eval (thousand N S Z).
+
+
+
+
