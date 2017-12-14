@@ -76,13 +76,6 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | "->" | 8594 | 10230      -> f (); Parser.ARROW
   | ":="                     -> f (); Parser.COLONEQ
 
-  (* | '|'                      -> f (); BAR
-   * | "="                      -> f (); EQ *)
-
-(*
-  | ';'                      -> f (); SEMICOLON
-*)
-
   (* We record the location of operators here because menhir cannot handle %infix and
      mark_location simultaneously, it seems. *)
   | prefixop                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Prefix) in

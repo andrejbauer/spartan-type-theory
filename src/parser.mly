@@ -4,22 +4,13 @@
 (* Infix operations a la OCaml *)
 %token <Name.ident Location.located> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4
 
-(* Names and constants *)
+(* Names *)
 %token <Name.ident> NAME
-(*
-%token <int> NUMERAL
-*)
 
 (* Parentheses & punctuations *)
 %token LPAREN RPAREN PERIOD
 %token COLONEQ
 %token COMMA COLON DARROW ARROW
-
-(*
-%token SEMICOLON
-%token COLON
-%token BAR DARROW
-*)
 
 (* Expressions *)
 %token TYPE
@@ -39,11 +30,11 @@
 %token EOF
 
 (* Precedence and fixity of infix operators *)
-(* %left     INFIXOP0
- * %right    INFIXOP1
- * %left     INFIXOP2
- * %left     INFIXOP3
- * %right    INFIXOP4 *)
+%left     INFIXOP0
+%right    INFIXOP1
+%left     INFIXOP2
+%left     INFIXOP3
+%right    INFIXOP4
 
 %start <Input.toplevel list> file
 %start <Input.toplevel> commandline
@@ -74,11 +65,20 @@ plain_topcomp:
 (* Main syntax tree *)
 term : mark_location(plain_term) { $1 }
 plain_term:
-  | e=plain_app_term                     { e }
+  | e=plain_infix_term                   { e }
   | PROD a=abstraction COMMA e=term      { Input.Prod (a, e) }
-  | e1=app_term ARROW e2=term            { Input.Arrow (e1, e2) }
+  | e1=infix_term ARROW e2=term          { Input.Arrow (e1, e2) }
   | LAMBDA a=abstraction DARROW e=term   { Input.Lambda (a, e) }
 
+infix_term: mark_location(plain_infix_term) { $1 }
+plain_infix_term:
+  | e=plain_app_term { e }
+  | e2=infix_term oploc=infix e3=infix_term
+    { let {Location.data=op; loc} = oploc in
+      let op = Location.locate ~loc (Input.Var op) in
+      let e1 = Location.locate ~loc (Input.Apply (op, e2)) in
+      Input.Apply (e1, e3)
+    }
 
 app_term: mark_location(plain_app_term) { $1 }
 plain_app_term:
