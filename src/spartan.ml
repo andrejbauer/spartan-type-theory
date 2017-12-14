@@ -34,6 +34,10 @@ let options = Arg.align [
      Arg.String (fun str -> Config.prelude_file := Config.PreludeFile str),
      "<file> Specify the prelude file to load initially");
 
+    ("--ascii",
+     Arg.Set Config.ascii,
+     " Use ASCII characters only");
+
     ("-v",
      Arg.Unit (fun () ->
          Format.printf "Andromeda %s (%s)@." Build.version Sys.os_type ;

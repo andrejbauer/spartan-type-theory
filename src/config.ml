@@ -14,3 +14,5 @@ let wrapper = ref (Some ["rlwrap"; "ledit"])
 let max_boxes = ref 42
 
 let columns = ref (Format.get_margin ())
+
+let ascii = ref false

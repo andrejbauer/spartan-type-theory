@@ -4,6 +4,7 @@
 type type_error =
   | InvalidIndex of int
   | TypeExpected of Value.ty * Value.ty
+  | FunctionExpected of Value.ty
 
 exception Error of type_error Location.located
 
@@ -18,6 +19,9 @@ let rec print_error err ppf =
      Format.fprintf ppf "this expression should have type %t but has type %t"
                         (Value.print_ty ty_expected)
                         (Value.print_ty ty_actual)
+  | FunctionExpected t ->
+     Format.fprintf ppf "this expression should be a function but has type %t"
+                        (Value.print_ty t)
 
 let rec infer ctx {Location.data=e'; loc} =
   match e' with
@@ -32,17 +36,54 @@ let rec infer ctx {Location.data=e'; loc} =
   | Syntax.Type ->
      Value.Type, Value.ty_Type
 
+  | Syntax.Prod ((x, t), u) ->
+     let t = check_ty ctx t in
+     let ctx  = Context.extend_ident (Value.Atom (Value.new_atom x)) t ctx in
+     let u = check_ty ctx u in
+     let u = Value.unabstract_ty x u in
+     Value.Prod ((x, t), u),
+     Value.ty_Type
+
+  | Syntax.Lambda ((x, t), e) ->
+     let t = check_ty ctx t in
+     let x' = Value.new_atom x in
+     let ctx  = Context.extend_ident (Value.Atom x') t ctx in
+     let e, u = infer ctx e in
+     let e = Value.abstract x' e in
+     let u = Value.abstract_ty x' u in
+     Value.Lambda ((x, t), e),
+     Value.Ty (Value.Prod ((x, t), u))
+
+  | Syntax.Apply (e1, e2) ->
+     let e1, t1 = infer ctx e1 in
+     begin
+       match Equal.as_prod ctx t1 with
+       | None -> error ~loc (FunctionExpected t1)
+       | Some ((x, t), u) ->
+          let e2 = check ctx e2 t in
+          Value.Apply (e1, e2),
+          Value.instantiate_ty 0 e2 t
+     end
+
+
+
 and check ctx ({Location.data=e'; loc} as e) ty =
   match e' with
-
+  | Syntax.Apply _
+  | Syntax.Lambda _
+  | Syntax.Prod _
   | Syntax.Var _
   | Syntax.Type ->
      let e, ty' = infer ctx e in
      if Equal.ty ~loc ctx ty ty'
      then
-       e, ty
+       e
      else
        error ~loc (TypeExpected (ty, ty'))
+
+and check_ty ctx t =
+  let t = check ctx t Value.ty_Type in
+  Value.Ty t
 
 let rec toplevel ~quiet ctx {Location.data=tc; loc} =
   let ctx = toplevel' ~quiet ctx tc in
@@ -51,9 +92,10 @@ let rec toplevel ~quiet ctx {Location.data=tc; loc} =
 and toplevel' ~quiet ctx = function
   | Syntax.TopDefinition (x, e) ->
      let e, ty = infer ctx e in
-     let ctx = Context.extend_ident (Value.Var x) ty ctx in
-     let ctx = Context.extend_def x e ctx in
-     if not quiet then Format.printf "%s is defined.@." x ;
+     let x' = Value.new_atom x in
+     let ctx = Context.extend_ident (Value.Atom x') ty ctx in
+     let ctx = Context.extend_def x' e ctx in
+     if not quiet then Format.printf "%t is defined.@." (Name.print_ident x) ;
      ctx
 
   | Syntax.TopCheck e ->

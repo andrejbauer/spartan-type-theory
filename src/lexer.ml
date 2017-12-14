@@ -2,7 +2,9 @@ let reserved = [
   ("Check", Parser.CHECK) ;
   ("Definition", Parser.DEFINITION) ;
   ("Eval", Parser.EVAL) ;
+  ("fun", Parser.LAMBDA) ;
   ("Load", Parser.LOAD) ;
+  ("forall", Parser.PROD) ;
   ("Type", Parser.TYPE)
 ]
 
@@ -32,9 +34,7 @@ let end_longcomment= [%sedlex.regexp? "*)"]
 let newline = [%sedlex.regexp? ('\n' | '\r' | "\n\r" | "\r\n")]
 let hspace  = [%sedlex.regexp? (' ' | '\t' | '\r')]
 
-(*
 let quoted_string = [%sedlex.regexp? '"', Star (Compl '"'), '"']
-*)
 
 let update_eoi ({ Ulexbuf.pos_end; line_limit;_ } as lexbuf) =
   match line_limit with None -> () | Some line_limit ->
@@ -59,45 +59,56 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | newline                  -> f (); Ulexbuf.new_line lexbuf; token_aux lexbuf
   | start_longcomment        -> f (); comments 0 lexbuf
   | Plus hspace              -> f (); token_aux lexbuf
-(*
   | quoted_string            -> f ();
      let s = Ulexbuf.lexeme lexbuf in
      let l = String.length s in
      let n = ref 0 in
      String.iter (fun c -> if c = '\n' then incr n) s;
      Ulexbuf.new_line ~n:!n lexbuf;
-     QUOTED_STRING (String.sub s 1 (l - 2))
-*)
+     Parser.QUOTED_STRING (String.sub s 1 (l - 2))
   | '('                      -> f (); Parser.LPAREN
   | ')'                      -> f (); Parser.RPAREN
   | '.'                      -> f (); Parser.PERIOD
+  | ','                      -> f (); Parser.COMMA
+  | ':'                      -> f (); Parser.COLON
+  | "=>" | 8658 | 10233      -> f (); Parser.DARROW
+
   (* | '|'                      -> f (); BAR
-   * | "=>" | 8658 | 10233      -> f (); DARROW
    * | "->" | 8594 | 10230      -> f (); ARROW
    * | "="                      -> f (); EQ *)
   | ":="                     -> f (); Parser.COLONEQ
 
 (*
-  | ','                      -> f (); COMMA
-  | ':'                      -> f (); COLON
   | ';'                      -> f (); SEMICOLON
 *)
 
   (* We record the location of operators here because menhir cannot handle %infix and
      mark_location simultaneously, it seems. *)
-  | prefixop                 -> f (); Parser.PREFIXOP (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop0                 -> f (); Parser.INFIXOP0 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop1                 -> f (); Parser.INFIXOP1 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop2                 -> f (); Parser.INFIXOP2 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | prefixop                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Prefix) in
+                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+                                      Parser.PREFIXOP op
+  | infixop0                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 0) in
+                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+                                      Parser.INFIXOP0 op
+  | infixop1                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 1) in
+                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+                                      Parser.INFIXOP1 op
+  | infixop2                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 2) in
+                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+                                      Parser.INFIXOP2 op
   (* Comes before infixop3 because ** matches the infixop3 pattern too *)
-  | infixop4                 -> f (); Parser.INFIXOP4 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
-  | infixop3                 -> f (); Parser.INFIXOP3 (Ulexbuf.lexeme lexbuf, loc_of lexbuf)
+  | infixop4                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 4) in
+                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+                                      Parser.INFIXOP4 op
+  | infixop3                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 3) in
+                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+                                      Parser.INFIXOP3 op
 
   | eof                      -> f (); Parser.EOF
   | name                     -> f ();
     let n = Ulexbuf.lexeme lexbuf in
     begin try List.assoc n reserved
-    with Not_found -> Parser.NAME n
+    with Not_found -> Parser.NAME (Name.Ident (n, Name.Word))
     end
 (*
   | numeral                  -> f (); let k = safe_int_of_string lexbuf in NUMERAL k

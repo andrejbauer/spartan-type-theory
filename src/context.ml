@@ -3,7 +3,7 @@
 (* A de Bruijn index is bound to a type and a value. *)
 type entry = Value.expr * Value.ty
 
-type definition = Name.ident * Value.expr
+type definition = Value.atom * Value.expr
 
 type context =
   {

@@ -4,8 +4,8 @@
 
 (** Conversion errors *)
 type desugar_error =
-  | UnknownIdentifier of string
-  | AlreadyDefined of string
+  | UnknownIdentifier of Name.ident
+  | AlreadyDefined of Name.ident
 
 exception Error of desugar_error Location.located
 
@@ -15,8 +15,8 @@ let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 (** Print error description. *)
 let print_error err ppf =
   match err with
-  | UnknownIdentifier x -> Format.fprintf ppf "unknown identifier %s" x
-  | AlreadyDefined x -> Format.fprintf ppf "%s is already defined" x
+  | UnknownIdentifier x -> Format.fprintf ppf "unknown identifier %t" (Name.print_ident x)
+  | AlreadyDefined x -> Format.fprintf ppf "%t is already defined" (Name.print_ident x)
 
 (** A desugaring context is a list of known identifiers, which is used to compute de
    Bruijn indices. *)
@@ -38,20 +38,60 @@ let index x ctx =
   search 0 ctx
 
 (** Desugar a term *)
-let rec expr ctx {Location.data=c; Location.loc=loc} =
-
-  let rec expr' ctx = function
+let rec expr ctx {Location.data=e; Location.loc=loc} =
+  match e with
 
     | Input.Var x ->
        begin match index x ctx with
        | None -> error ~loc (UnknownIdentifier x)
-       | Some k -> Syntax.Var k
+       | Some k -> Location.locate ~loc (Syntax.Var k)
        end
 
-    | Input.Type -> Syntax.Type
+    | Input.Type -> Location.locate ~loc Syntax.Type
+
+    | Input.Prod (a, u) ->
+       let ctx, xts = abstraction ctx a in
+       let u = ty ctx u in
+       List.fold_right
+         (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Prod ((x, t), e)))
+         xts u
+
+    | Input.Lambda (a, e) ->
+       let ctx, lst = abstraction ctx a in
+       let e = expr ctx e in
+       List.fold_right
+         (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Lambda ((x, t), e)))
+         lst e
+
+    | Input.Apply (e1, e2) ->
+       let e1 = expr ctx e1
+       and e2 = expr ctx e2 in
+       Location.locate ~loc (Syntax.Apply (e1, e2))
+
+
+and ty ctx t = expr ctx t
+
+and abstraction ctx a : context * (Name.ident * Syntax.ty) list =
+  let rec fold ctx = function
+    | [] -> ctx, []
+    | (xs, t) :: lst ->
+       let ctx, xts = abstraction1 ctx xs t in
+       let ctx, yts = fold ctx lst in
+       ctx, xts @ yts
   in
-  let e = expr' ctx c in
-  Location.locate ~loc e
+  fold ctx a
+
+and abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
+  let rec fold ctx t lst = function
+    | [] -> ctx, List.rev lst
+    | x :: xs ->
+       let ctx = extend x ctx
+       and lst = (x, t) :: lst
+       and t = Syntax.shift_ty 0 1 t in
+       fold ctx t lst xs
+  in
+  let t = ty ctx t in
+  fold ctx t [] xs
 
 
 let rec toplevel ctx {Location.data=c; Location.loc=loc} =
