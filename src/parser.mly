@@ -13,11 +13,11 @@
 (* Parentheses & punctuations *)
 %token LPAREN RPAREN PERIOD
 %token COLONEQ
-%token COMMA COLON DARROW
+%token COMMA COLON DARROW ARROW
 
 (*
 %token SEMICOLON
-%token COLON ARROW
+%token COLON
 %token BAR DARROW
 *)
 
@@ -76,7 +76,9 @@ term : mark_location(plain_term) { $1 }
 plain_term:
   | e=plain_app_term                     { e }
   | PROD a=abstraction COMMA e=term      { Input.Prod (a, e) }
+  | e1=app_term ARROW e2=term            { Input.Arrow (e1, e2) }
   | LAMBDA a=abstraction DARROW e=term   { Input.Lambda (a, e) }
+
 
 app_term: mark_location(plain_app_term) { $1 }
 plain_app_term:

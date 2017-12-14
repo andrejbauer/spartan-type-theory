@@ -73,11 +73,11 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | ','                      -> f (); Parser.COMMA
   | ':'                      -> f (); Parser.COLON
   | "=>" | 8658 | 10233      -> f (); Parser.DARROW
+  | "->" | 8594 | 10230      -> f (); Parser.ARROW
+  | ":="                     -> f (); Parser.COLONEQ
 
   (* | '|'                      -> f (); BAR
-   * | "->" | 8594 | 10230      -> f (); ARROW
    * | "="                      -> f (); EQ *)
-  | ":="                     -> f (); Parser.COLONEQ
 
 (*
   | ';'                      -> f (); SEMICOLON

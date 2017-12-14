@@ -56,6 +56,13 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
          (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Prod ((x, t), e)))
          xts u
 
+    | Input.Arrow (t1, t2) ->
+       let t1 = ty ctx t1
+       and t2 = ty ctx t2 in
+       let t2 = Syntax.shift_ty 0 1 t2 in
+       let x = Name.anonymous () in
+       Location.locate ~loc (Syntax.Prod ((x, t1), t2))
+
     | Input.Lambda (a, e) ->
        let ctx, lst = abstraction ctx a in
        let e = expr ctx e in

@@ -7,6 +7,7 @@ and expr' =
   | Prod of ty abstraction
   | Lambda of expr abstraction
   | Apply of expr * expr
+  | Arrow of expr * expr
 
 and ty = expr
 
