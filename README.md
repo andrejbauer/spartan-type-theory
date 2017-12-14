@@ -47,20 +47,20 @@ You can type:
 
 The purpose of the implementation is to keep the source uncomplicated and short. The
 essential bits of source code can be found in the following files. It should be possible
-for you to just read the entire source code. You should start with the core
+for you to just read the entire source code. You should start with the core:
 
-* `syntax.ml` -- abstract syntax of the input
-* `context.ml` -- contexts
-* `equal.ml` -- normalization
-* `typecheck.ml` -- type checking and conversion from abstract syntax to core type theory
-* `tt.ml` -- the core type theory
+* [`syntax.ml`](src/syntax.ml) -- abstract syntax of the input
+* [`context.ml`](src/context.ml) -- contexts
+* [`equal.ml`](src/equal.ml) -- normalization
+* [`typecheck.ml`](src/typecheck.ml) -- type checking and conversion from abstract syntax to core type theory
+* [`tt.ml`](src/tt.ml) -- the core type theory
 
 and continue with the infrastructure
 
-* `spartan.ml` -- interactive top level
-* `print.ml` -- printing and message support
-* `desugar.ml` -- conversion from parsed syntax to abstract syntax
-* `lexer.mll` and `parser.mly` -- parsing into concrete syntax
+* [`spartan.ml`](src/spartan.ml) -- interactive top level
+* [`print.ml`](src/print.ml) -- printing and message support
+* [`desugar.ml`](src/desugar.ml) -- conversion from parsed syntax to abstract syntax
+* [`lexer.ml`](src/lexer.ml) and [`parser.mly`](src/parser.mly) -- parsing into concrete syntax
 
 
 ## What experiments should I perform to learn more?
