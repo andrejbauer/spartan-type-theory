@@ -7,7 +7,7 @@ SRCDIR = src
 
 default: spartan.native
 
-.PHONY: clean spartan.byte spartan.native spartan.d.byte spartan.p.native
+.PHONY: doc clean spartan.byte spartan.native spartan.d.byte spartan.p.native
 
 ### Compilation of OCaml files
 
