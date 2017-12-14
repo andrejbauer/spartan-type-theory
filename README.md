@@ -10,10 +10,18 @@ University of Birmingham in December 2017.
 The dependent type theory `spartan` has the following ingridients:
 
 * A universe `Type` with `Type : Type`.
-* Dependent products written as `forall (x : T1), T2` or `∀ (x : T1), T2` or `∏ (x : T1), T2`.
-* Functions written as `fun (x : T) => e` or `λ (x : T) => e`. The typing annotation may be omitted.
-* Application written as `e1 e2`.
+* Dependent products written as `forall (x : T₁), T₂` or `∀ (x : T₁), T₂` or `∏ (x : T₁), T₂`.
+* Functions written as `fun (x : T) => e` or `λ (x : T) ⇒ e`. The typing annotation may be omitted.
+* Application written as `e₁ e₂`.
 * Type ascription written as `e : T`.
+
+Top-level commands:
+
+* `Definition x := e.` -- define a value
+* `Axiom x : T.` -- assume a constant `x` of type `T`
+* `Check e.` -- print the type of `e`
+* `Eval e.` -- evaluate `e` a la call-by-value
+* `Load "⟨file⟩".` -- load a file
 
 ## Prerequisites
 
@@ -34,10 +42,6 @@ You can type:
 * `make byte` to make the bytecode `spartan.byte` executable.
 * `make clean` to clean up.
 * `make doc` to generate HTML documentation (see the generated [`spartan.docdir/index.html`](spartan.docdir/index.html)).
-
-## Usage
-
-Here is a sample session:
 
 ## Source code
 
