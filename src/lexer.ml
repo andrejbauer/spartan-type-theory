@@ -88,20 +88,20 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | prefixop                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Prefix) in
                                       let op = Location.locate ~loc:(loc_of lexbuf) op in
                                       Parser.PREFIXOP op
-  | infixop0                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 0) in
+  | infixop0                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix0) in
                                       let op = Location.locate ~loc:(loc_of lexbuf) op in
                                       Parser.INFIXOP0 op
-  | infixop1                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 1) in
+  | infixop1                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix1) in
                                       let op = Location.locate ~loc:(loc_of lexbuf) op in
                                       Parser.INFIXOP1 op
-  | infixop2                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 2) in
+  | infixop2                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix2) in
                                       let op = Location.locate ~loc:(loc_of lexbuf) op in
                                       Parser.INFIXOP2 op
   (* Comes before infixop3 because ** matches the infixop3 pattern too *)
-  | infixop4                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 4) in
+  | infixop4                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix4) in
                                       let op = Location.locate ~loc:(loc_of lexbuf) op in
                                       Parser.INFIXOP4 op
-  | infixop3                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix 3) in
+  | infixop3                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix3) in
                                       let op = Location.locate ~loc:(loc_of lexbuf) op in
                                       Parser.INFIXOP3 op
 

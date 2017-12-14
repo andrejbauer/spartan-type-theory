@@ -1,15 +1,15 @@
-(* Runtime values *)
+(* Runtime values. *)
 
 type index = int
 
 type atom = Name.ident * int
 
-(** Values stored in variables *)
+(** Values *)
 type expr =
-  | Bound of index
-  | Atom of atom
-  | Type
-  | Prod of ty abstraction
+  | Bound of index (* de Bruijn index *)
+  | Atom of atom (* primitive symbol *)
+  | Type (* the type of types *)
+  | Prod of ty abstraction (* dependent product *)
   | Lambda of expr abstraction
   | Apply of expr * expr
 
@@ -17,6 +17,7 @@ and ty = Ty of expr
 
 and 'a abstraction = (Name.ident * ty) * 'a
 
+(** Create an atom from an identifier. *)
 let new_atom =
   let k = ref (-1) in
   fun x -> incr k ; (x, !k)
@@ -86,34 +87,164 @@ let unabstract x e = instantiate 0 (Atom (new_atom x)) e
 
 let unabstract_ty x (Ty t) = Ty (instantiate 0 (Atom (new_atom x)) t)
 
-let rec print_expr v ppf =
-  match v with
-  | Bound k -> Format.fprintf ppf "[%d]" k
+let rec occurs k = function
+  | Bound j -> j = k
+  | Atom _ -> false
+  | Type -> false
+  | Prod ((_, t), u) -> occurs_ty k t || occurs_ty (k+1) u
+  | Lambda ((_, t), e) -> occurs_ty k t || occurs (k+1) e
+  | Apply (e1, e2) -> occurs k e1 || occurs k e2
 
-  | Type -> Format.fprintf ppf "Type"
+and occurs_ty k (Ty t) = occurs k t
 
-  | Atom (x, _) -> Format.fprintf ppf "%t" (Name.print_ident x)
+(****** Printing routines *****)
+type print_env = Name.ident list
 
-  | Prod ((x, t), u) ->
-     Format.fprintf ppf "%s %t,@ @[<hov>%t@]"
-       (Name.prod ())
-       (print_abstraction x t)
-       (print_ty u)
+let add_forbidden x forbidden = x :: forbidden
 
-  | Lambda ((x, t), e) ->
-     Format.fprintf ppf "%s %t,@ @[<hov>%t@]"
-       (Name.lambda ())
-       (print_abstraction x t)
-       (print_expr e)
+let print_binders ~penv print_u print_v xus ppf =
+  Format.pp_open_hovbox ppf 2 ;
+  let rec fold ~penv = function
+    | [] -> penv
+    | (x,u) :: xus ->
+       let y = Name.refresh penv x in
+       Print.print ppf "@;<1 -4>(%t : %t)"
+                   (Name.print_ident y)
+                   (print_u ~penv u) ;
+       fold ~penv:(add_forbidden y penv) xus
+  in
+  let penv = fold ~penv xus in
+  Print.print ppf ",@ %t" (print_v ~penv) ;
+  Format.pp_close_box ppf ()
 
-  | Apply (e1, e2) ->
-     Format.fprintf ppf "(%t) (%t)"
-       (print_expr e1)
-       (print_expr e2)
+let print_atom (x, _) ppf = Name.print_ident x ppf
 
-and print_abstraction x t ppf =
-  Format.fprintf ppf "(%t :@ %t)"
-    (Name.print_ident x)
-    (print_ty t)
+let rec print_expr ?max_level ~penv e ppf =
+    print_expr' ~penv ?max_level e ppf
 
-and print_ty (Ty t) ppf = print_expr t ppf
+and print_expr' ~penv ?max_level e ppf =
+  let print ?at_level = Print.print ?max_level ?at_level ppf in
+    match e with
+      | Type ->
+        Format.fprintf ppf "Type"
+
+      | Atom x ->
+        print_atom x ppf
+
+      | Bound k -> print "INDEX[%d]" k
+
+      | Lambda a -> print_lambda ?max_level ~penv a ppf
+
+      | Apply (e1, e2) -> print_app ?max_level ~penv e1 e2 ppf
+
+      | Prod xts -> print_prod ?max_level ~penv xts ppf
+
+      (* | Eq (t, e1, e2) ->
+       *   print ~at_level:Level.eq "%t@ %s@ %t"
+       *     (print_expr ~max_level:Level.eq_left ~penv e1)
+       *     (Print.char_equal ())
+       *     (print_expr ~max_level:Level.eq_right ~penv e2)
+       *
+       * | Refl (t, e) ->
+       *   print ~at_level:Level.app "refl@ %t"
+       *     (print_expr ~max_level:Level.app_right ~penv  e) *)
+
+and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
+
+(** [print_app e1 e2 ppf] prints the application [e1 e2] using formatter [ppf],
+    possibly as a prefix or infix operator. *)
+and print_app ?max_level ~penv e1 e2 ppf =
+  let e1_prefix =
+    match e1 with
+    | Bound k ->
+       begin
+         match List.nth penv k with
+         | Name.Ident (_, Name.Prefix) as op -> Some op
+         | Name.Ident (_, _) -> None
+         | exception Failure failure when failure = "nth" -> None
+       end
+    | Atom (Name.Ident (_, Name.Prefix) as op, _) -> Some op
+    | _ -> None
+  in
+  match e1_prefix with
+  | Some op ->
+     Print.print ppf ?max_level ~at_level:Level.prefix "%t@ %t"
+                 (Name.print_ident ~parentheses:false op)
+                 (print_expr ~max_level:Level.prefix_arg ~penv e2)
+
+  | None ->
+     (* Infix or ordinary application. *)
+     begin
+       let e1_infix =
+         begin
+           match e1 with
+           | Apply (Bound k, e1) ->
+              begin
+                match List.nth penv k with
+                | Name.Ident (_, Name.Infix fixity) as op ->
+                   Some (op, fixity, e1)
+                | Name.Ident (_, (Name.Word | Name.Anonymous _| Name.Prefix)) -> None
+                | exception Failure failure when failure = "nth" -> None
+              end
+           | Apply (Atom (Name.Ident (_, Name.Infix fixity) as op, _), e1) ->
+              Some (op, fixity, e1)
+
+           | _ -> None
+         end
+       in
+       match e1_infix with
+       | Some (op, fixity, e1) ->
+          let (lvl_op, lvl_left, lvl_right) = Level.infix fixity in
+          Print.print ppf ?max_level ~at_level:lvl_op "%t@ %t@ %t"
+                      (print_expr ~max_level:lvl_left ~penv e1)
+                      (Name.print_ident ~parentheses:false op)
+                      (print_expr ~max_level:lvl_right ~penv e2)
+       | None ->
+          (* ordinary application *)
+          Print.print ppf ?max_level ~at_level:Level.app "%t@ %t"
+                       (print_expr ~max_level:Level.app_left ~penv e1)
+                       (print_expr ~max_level:Level.app_right ~penv e2)
+     end
+
+
+(** [print_lambda a e t ppf] prints a lambda abstraction using formatter [ppf]. *)
+and print_lambda ?max_level ~penv ((x, u), e) ppf =
+  let x = (if not (occurs 0 e) then Name.anonymous () else x) in
+  let rec collect xus e =
+    match e with
+    | Lambda ((x, u), e) ->
+       let x = (if not (occurs 0 e) then Name.anonymous () else x) in
+       collect ((x, u) :: xus) e
+    | _ ->
+       (List.rev xus, e)
+  in
+  let xus, e = collect [(x,u)] e in
+  Print.print ?max_level ~at_level:Level.binder ppf "%s%t"
+    (Print.char_lambda ())
+    (print_binders ~penv
+                   (print_ty ~max_level:Level.ascription)
+                   (fun ~penv -> print_expr ~max_level:Level.in_binder ~penv e)
+                   xus)
+
+(** [print_prod a e t ppf] prints a lambda abstraction using formatter [ppf]. *)
+and print_prod ?max_level ~penv ((x, u), t) ppf =
+  if not (occurs_ty 0 t) then
+    Print.print ?max_level ~at_level:Level.arr ppf "%t@ %s@ %t"
+          (print_ty ~max_level:Level.arr_left ~penv u)
+          (Print.char_arrow ())
+          (print_ty ~max_level:Level.arr_right ~penv:(add_forbidden (Name.anonymous ()) penv) t)
+  else
+    let rec collect xus ((Ty t) as t_ty) =
+      match t with
+      | Prod ((x, u), t_ty) when occurs_ty 0 t_ty ->
+         collect ((x, u) :: xus) t_ty
+      | _ ->
+         (List.rev xus, t_ty)
+    in
+    let xus, t = collect [(x,u)] t in
+    Print.print ?max_level ~at_level:Level.binder ppf "%s%t"
+                (Print.char_prod ())
+                (print_binders ~penv
+                               (print_ty ~max_level:Level.ascription)
+                               (fun ~penv -> print_ty ~max_level:Level.in_binder ~penv t)
+                               xus)

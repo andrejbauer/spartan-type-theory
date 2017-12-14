@@ -12,16 +12,16 @@ exception Error of type_error Location.located
 let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 
 (** Print error description. *)
-let rec print_error err ppf =
+let rec print_error ~penv err ppf =
   match err with
   | InvalidIndex k -> Format.fprintf ppf "invalid de Bruijn index %d, please report" k
   | TypeExpected (ty_expected, ty_actual) ->
      Format.fprintf ppf "this expression should have type %t but has type %t"
-                        (Value.print_ty ty_expected)
-                        (Value.print_ty ty_actual)
+                        (Value.print_ty ~penv ty_expected)
+                        (Value.print_ty ~penv ty_actual)
   | FunctionExpected t ->
      Format.fprintf ppf "this expression should be a function but has type %t"
-                        (Value.print_ty t)
+                        (Value.print_ty ~penv t)
 
 let rec infer ctx {Location.data=e'; loc} =
   match e' with
@@ -63,7 +63,7 @@ let rec infer ctx {Location.data=e'; loc} =
        | Some ((x, t), u) ->
           let e2 = check ctx e2 t in
           Value.Apply (e1, e2),
-          Value.instantiate_ty 0 e2 t
+          Value.instantiate_ty 0 e2 u
      end
 
 
@@ -106,16 +106,16 @@ and toplevel' ~quiet ctx = function
   | Syntax.TopCheck e ->
      let e, ty = infer ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
-       (Value.print_expr e)
-       (Value.print_ty ty) ;
+       (Value.print_expr ~penv:(Context.penv ctx) e)
+       (Value.print_ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
   | Syntax.TopEval e ->
      let e, ty = infer ctx e in
      let e = Equal.norm_expr ~strategy:Equal.Strong ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
-       (Value.print_expr e)
-       (Value.print_ty ty) ;
+       (Value.print_expr ~penv:(Context.penv ctx) e)
+       (Value.print_ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
   | Syntax.TopAxiom (x, ty) ->

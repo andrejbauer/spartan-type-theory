@@ -38,6 +38,10 @@ let options = Arg.align [
      Arg.Set Config.ascii,
      " Use ASCII characters only");
 
+    ("-V",
+     Arg.Set_int Config.verbosity,
+     "<n> Set printing verbosity to <n>");
+
     ("-n",
      Arg.Clear Config.interactive_shell,
      " Do not run the interactive toplevel");
@@ -49,7 +53,7 @@ let options = Arg.align [
 
 (** Interactive toplevel *)
 let interactive_shell state =
-  Format.printf "Spartan type theory@." ;
+  Format.printf "Very spartan type theory@." ;
 
   let rec loop state =
     let state =
@@ -57,13 +61,19 @@ let interactive_shell state =
         Toplevel.exec_interactive state
       with
       | Ulexbuf.Error {Location.data=err; Location.loc} ->
-         Print.message ~loc "Syntax error" "%t" (Ulexbuf.print_error err) ; state
+         Print.error "Lexical error at %t:@ %t" (Location.print loc) (Ulexbuf.print_error err) ;
+         state
       | Desugar.Error {Location.data=err; Location.loc} ->
-         Print.message ~loc "Syntax error" "%t" (Desugar.print_error err) ; state
+         Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugar.print_error err) ;
+         state
       | Typecheck.Error {Location.data=err; Location.loc} ->
-        Print.message ~loc "Error" "%t" (Typecheck.print_error err) ; state
+         Print.error "Typechecking error at %t:@ %t"
+           (Location.print loc)
+           (Typecheck.print_error ~penv:(Toplevel.penv state) err) ;
+         state
       | Sys.Break ->
-         Print.message ~loc:Location.Nowhere "Runtime" "interrupted" ; state
+         Print.error "Interrupted." ;
+         state
     in loop state
   in
   try
@@ -114,22 +124,29 @@ let main =
   Format.set_max_boxes !Config.max_boxes ;
   Format.set_margin !Config.columns ;
   Format.set_ellipsis_text "..." ;
-  try
 
-    (* Run and load all the specified files. *)
-    let topstate =
-      List.fold_left
-        (fun topstate (fn, quiet) -> Toplevel.load_file ~quiet topstate fn)
-        Toplevel.initial !files in
+  let rec run_code topstate files =
+    try
+      begin
+        match files with
+        | [] ->
+           if !Config.interactive_shell
+           then interactive_shell topstate
+           else ()
 
-    if !Config.interactive_shell
-      then interactive_shell topstate
-      else ()
+        | (fn, quiet) :: files ->
+           let topstate = Toplevel.load_file ~quiet topstate fn in
+           run_code topstate files
+      end
+    with
+    | Ulexbuf.Error {Location.data=err; Location.loc} ->
+       Print.error "Lexical error at %t:@ %t" (Location.print loc) (Ulexbuf.print_error err)
+    | Desugar.Error {Location.data=err; Location.loc} ->
+       Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugar.print_error err)
+    | Typecheck.Error {Location.data=err; Location.loc} ->
+       Print.error "Typechecking error at %t:@ %t"
+         (Location.print loc)
+         (Typecheck.print_error ~penv:(Toplevel.penv topstate) err)
+  in
 
-  with
-  | Ulexbuf.Error {Location.data=err; Location.loc} ->
-     Print.message ~loc "Syntax error" "%t" (Ulexbuf.print_error err)
-  | Desugar.Error {Location.data=err; Location.loc} ->
-     Print.message ~loc "Syntax error" "%t" (Desugar.print_error err)
-  | Typecheck.Error {Location.data=err; Location.loc} ->
-     Print.message ~loc "Type error" "%t" (Typecheck.print_error err)
+  run_code Toplevel.initial !files

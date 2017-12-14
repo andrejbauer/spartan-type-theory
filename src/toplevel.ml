@@ -10,6 +10,8 @@ let initial = {
     typecheck = Context.initial;
 }
 
+let penv {typecheck} = Context.penv typecheck
+
 let exec_interactive {desugar; typecheck} =
   let e = Lexer.read_toplevel Parser.commandline () in
   let desugar, e = Desugar.toplevel desugar e in
