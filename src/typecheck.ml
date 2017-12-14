@@ -54,9 +54,9 @@ let rec infer ctx {Location.data=e'; loc} =
   | Syntax.Prod ((x, t), u) ->
      let t = check_ty ctx t in
      let x' = TT.new_atom x in
-     let ctx  = Context.extend_ident x' t ctx in
+     let ctx = Context.extend_ident x' t ctx in
      let u = check_ty ctx u in
-     let u = TT.unabstract_ty x' u in
+     let u = TT.abstract_ty x' u in
      TT.Prod ((x, t), u),
      TT.ty_Type
 

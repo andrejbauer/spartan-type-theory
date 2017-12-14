@@ -153,7 +153,7 @@ and print_expr' ~penv ?max_level e ppf =
 
       | Apply (e1, e2) -> print_app ?max_level ~penv e1 e2 ppf
 
-      | Prod ((x, t), u) -> print_prod ?max_level ~penv ((x, t), u) ppf
+      | Prod ((x, u), t) -> print_prod ?max_level ~penv ((x, u), t) ppf
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 
@@ -232,7 +232,7 @@ and print_lambda ?max_level ~penv ((x, u), e) ppf =
                    (fun ~penv -> print_expr ~max_level:Level.in_binder ~penv e)
                    xus)
 
-(** [print_prod a e t ppf] prints a lambda abstraction using formatter [ppf]. *)
+(** [print_prod ((x, u), t) ppf] prints the given product using formatter [ppf]. *)
 and print_prod ?max_level ~penv ((x, u), t) ppf =
   if not (occurs_ty 0 t) then
     Print.print ?max_level ~at_level:Level.arr ppf "@[<hov>%t@ %s@ %t@]"
