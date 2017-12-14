@@ -23,4 +23,4 @@ clean:
 # Build the documentation
 
 doc:
-	ocamlbuild -use-menhir -docflag -keep-code -lib unix spartan.docdir/index.html
+	ocamlbuild -docflag -keep-code $(OCAMLBUILD_MENHIRFLAGS) $(OCAMLBUILD_FLAGS) spartan.docdir/index.html

@@ -1,5 +1,6 @@
-(* Concrete syntax *)
+(** Concrete syntax as parsed by the parser. *)
 
+(** Parsed expression. *)
 type expr = expr' Location.located
 and expr' =
   | Var of Name.ident
@@ -10,8 +11,10 @@ and expr' =
   | Arrow of expr * expr
   | Ascribe of expr * ty
 
+(** Parsed type (equal to expression). *)
 and ty = expr
 
+(** Parsed top-level command. *)
 type toplevel = toplevel' Location.located
 and toplevel' =
   | TopLoad of string

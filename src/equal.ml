@@ -1,7 +1,11 @@
-(** Judgmental equality *)
+(** Equality and normalization. *)
 
-type strategy = Weak | Strong
+(** A normalization strategy. *)
+type strategy =
+  | WHNF (** normalize to weak head-normal form *)
+  | CBV (** call-by-value normalization *)
 
+(** Normalize an expression. *)
 let rec norm_expr ~strategy ctx e =
   match e with
   | TT.Bound k -> assert false
@@ -24,8 +28,8 @@ let rec norm_expr ~strategy ctx e =
      and e2 =
        begin
          match strategy with
-         | Weak -> e2
-         | Strong -> norm_expr ~strategy ctx e2
+         | WHNF -> e2
+         | CBV -> norm_expr ~strategy ctx e2
        end
      in
      begin
@@ -36,23 +40,25 @@ let rec norm_expr ~strategy ctx e =
        | _ -> TT.Apply (e1, e2)
      end
 
+(** Normalize a type *)
 let norm_ty ~strategy ctx (TT.Ty ty) =
   let ty = norm_expr ~strategy ctx ty in
   TT.Ty ty
 
+(** Normalize a type to a product. *)
 let rec as_prod ctx t =
-  let TT.Ty t' = norm_ty ~strategy:Weak ctx t in
+  let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
   match t' with
   | TT.Prod ((x, t), u) -> Some ((x, t), u)
   | _ -> None
 
-(** Are expressions [e1] and [e2] equal at type [ty]? *)
+(** Compare expressions [e1] and [e2] at type [ty]? *)
 let rec expr ctx e1 e2 ty =
   (* short-circuit *)
   (e1 == e2) ||
   begin
     (* The type directed phase *)
-    let TT.Ty ty' = norm_ty ~strategy:Weak ctx ty in
+    let TT.Ty ty' = norm_ty ~strategy:WHNF ctx ty in
     match  ty' with
 
     | TT.Prod ((x, t), u) ->
@@ -69,8 +75,8 @@ let rec expr ctx e1 e2 ty =
     | TT.Bound _
     | TT.Atom _ ->
        (* Type-directed phase is done, we compare normal forms. *)
-       let e1 = norm_expr ~strategy:Weak ctx e1
-       and e2 = norm_expr ~strategy:Weak ctx e2 in
+       let e1 = norm_expr ~strategy:WHNF ctx e1
+       and e2 = norm_expr ~strategy:WHNF ctx e2 in
        expr_whnf ctx e1 e2
 
     | TT.Lambda _ ->
@@ -78,14 +84,15 @@ let rec expr ctx e1 e2 ty =
        assert false
   end
 
-(** Compare two expressions that are already in weak-head normal form. *)
+(** Structurally compare weak head-normal expressions [e1] and [e2]. *)
 and expr_whnf ctx e1 e2 =
   match e1, e2 with
 
   | TT.Type, TT.Type -> true
 
   | TT.Bound k1, TT.Bound k2 ->
-     (* We should never be in a situation where we compare bound variables. *)
+     (* We should never be in a situation where we compare bound variables,
+        as that would mean that we forgot to unabstract a lambda or a product. *)
      assert false
 
   | TT.Atom x, TT.Atom y -> x = y
@@ -101,9 +108,8 @@ and expr_whnf ctx e1 e2 =
      end
 
   | TT.Lambda ((x, t1), e1), TT.Lambda ((_, t2), e2)  ->
-     (** We should never have to compare two lambdas,
-         as that would mean that the type-directed phase
-         did not figure out that these have product types. *)
+     (* We should never have to compare two lambdas, as that would mean that the
+        type-directed phase did not figure out that these have product types. *)
      assert false
 
   | TT.Apply (e11, e12), TT.Apply (e21, e22) ->
@@ -125,9 +131,15 @@ and expr_whnf ctx e1 e2 =
   | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _), _ ->
      false
 
-and ty ctx (TT.Ty ty1) (TT.Ty ty2) : bool =
+(** Compare two types. *)
+and ty ctx (TT.Ty ty1) (TT.Ty ty2) =
   expr ctx ty1 ty2 TT.ty_Type
 
+(** Compare two spines of equal lengths.
+
+    A spine is a nested application of the form [a e1 e2 ... en]
+    where [a] is an atom.
+ *)
 and spine ctx (a1, sp1) (a2, sp2) =
   a1 == a2 &&
   begin
@@ -145,7 +157,9 @@ and spine ctx (a1, sp1) (a2, sp2) =
                   fold u sp1 sp2
                 end
          end
-      | _, _ -> assert false
+      | _, _ ->
+         (* We should never be here, as the lengths of the spines should match. *)
+         assert false
     in
     match Context.lookup_atom_ty a1 ctx with
     | None -> assert false

@@ -1,17 +1,21 @@
-type fixity =
-  | Word
-  | Anonymous of int
-  | Prefix
-  | Infix of Level.infix
+(** Names of variables. *)
 
+(** Kinds of names. *)
+type fixity =
+  | Word (** an ordinary word *)
+  | Anonymous of int (** an anonymous name _ *)
+  | Prefix (** prefix operator *)
+  | Infix of Level.infix (** infix operator *)
+
+(** An identifier. *)
 type ident = Ident of string * fixity
 
-let make ?(fixity=Word) s = Ident (s, fixity)
-
+(** Create a fresh anonymous name. *)
 let anonymous =
   let k = ref (-1) in
   fun () -> (incr k ; Ident ("_", Anonymous !k))
 
+(** Print an identifier. *)
 let print_ident ?(parentheses=true) x ppf =
   match x with
   | Ident (s, Word) -> Format.fprintf ppf "%s" s
@@ -22,13 +26,6 @@ let print_ident ?(parentheses=true) x ppf =
      else
        Format.fprintf ppf "%s" s
 
-let print_op = print_ident ~parentheses:true
-
-let prod () =
-  if !Config.ascii then "forall" else "∏"
-
-let lambda () =
-  if !Config.ascii then "fun" else "λ"
 
 (** Split a string into base and an optional numerical suffix, e.g.,
     ["x42"] is split into [("x", Some 42)], while ["xy"] is split into
@@ -44,6 +41,8 @@ let extract_suffix s =
     and suffix = String.sub s (!i + 1) (n - !i - 1) in
     (base, Some (int_of_string suffix))
 
+(** Given a list [xs] of forbidden names and a name [x], find a new name for [x] which
+   does not clash with any from [xs]. *)
 let refresh xs ((Ident (s, fixity)) as x) =
   let rec used s = function
       | [] -> false

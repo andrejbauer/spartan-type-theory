@@ -1,3 +1,5 @@
+(** Precedence levels, support for pretty-printing. *)
+
 type t = int
 
 let parenthesize ~at_level ~max_level = max_level < at_level

@@ -1,10 +1,9 @@
-(** Abstract syntax. *)
+(** Abstract syntax of expressions, before they are type-checked. *)
 
-(* We use de Bruijn indices for variables *)
+(** De Bruijn index *)
 type index = int
 
-type operator = string
-
+(** Expressions *)
 type expr = expr' Location.located
 and expr' =
   | Var of index
@@ -14,8 +13,10 @@ and expr' =
   | Apply of expr * expr
   | Ascribe of expr * ty
 
+(** Types (equal to expressions at this point). *)
 and ty = expr
 
+(** Top-level commands. *)
 type toplevel = toplevel' Location.located
 and toplevel' =
   | TopLoad of toplevel list

@@ -1,3 +1,5 @@
+(** Support for UTF8 lexer. *)
+
 (** The state of the parser: a stream, a beginning- and an end-position. *)
 type t = private {
   stream : Sedlexing.lexbuf ;

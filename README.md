@@ -1,56 +1,43 @@
-A minimalist implementation of type theory in Ocaml. The repository holds
-several branches which correspond to a series of blog posts about
-dependent type theory on the [Mathematics and Computation](http://math.andrej.com/) blog.
+# An implementation of spartan type theory
+
+This repository shows how to implement a minimalist type theory of the kind that is called
+"spartan" by some people. The implementation was presented at the [School and Workshop on
+Univalent Mathematics](https://unimath.github.io/bham2017/) which took place at the
+University of Birmingham in December 2017.
 
 ## The type theory
 
-The dependent type theory `tt` has the following ingridients:
+The dependent type theory `spartan` has the following ingridients:
 
-* The universes are `Type 0`, `Type 1`, `Type 2`, ...
-* A dependent product is written as `forall x : T1, T2`
-* A function is written as `fun x : T => e`
-* Application is written as `e1 e2`
+* A universe `Type` with `Type : Type`.
+* Dependent products written as `forall (x : T1), T2` or `∀ (x : T1), T2` or `∏ (x : T1), T2`.
+* Functions written as `fun (x : T) => e` or `λ (x : T) => e`. The typing annotation may be omitted.
+* Application written as `e1 e2`.
+* Type ascription written as `e : T`.
 
-The hierarchy of universes is not commulative, i.e., even though `Type k` has type `Type
-(k+1)`, `Type k` is *not* a subuniverse of `Type (k+1)`.
+## Prerequisites
+
+* [OCaml](https://ocaml.org) and [OPAM](https://opam.ocaml.org)
+
+* The OPAM packages `menhir` and `sedlex`:
+
+        opam install menhir
+        opam install sedlex
+
+* It is recommended that you also install the `rlwrap` or `ledit` command line wrapper.
 
 ## Compilation
 
-You need `ocamlbuild`, which is part of OCaml, the `menhir` parser generator, and `make`.
-You can type
+You can type:
 
-* `make` to make the `tt.native` executable.
-* `make byte` to make the bytecode `tt.byte` executable.
+* `make` to make the `spartan.native` executable.
+* `make byte` to make the bytecode `spartan.byte` executable.
 * `make clean` to clean up.
-* `make doc` to generate HTML documentation (see the generated `tt.docdir/index.html`).
+* `make doc` to generate HTML documentation (see the generated [`spartan.docdir/index.html`](spartan.docdir/index.html)).
 
 ## Usage
 
-Type `Help.` in the interactive shell to see what the type system can do. Here is a sample
-session:
-
-    tt blog-part-I
-    [Type Ctrl-D to exit or "Help." for help.]
-    # Parameter N : Type 0.
-    N is assumed
-    # Parameter z : N. Parameter s : N -> N.
-    z is assumed
-    s is assumed
-    # Definition three := fun f : N -> N => fun x : N => f (f (f x)).
-    three is defined
-    # Context.
-    three = fun f : N -> N => fun x : N => f (f (f x))
-        : (N -> N) -> N -> N
-    s : N -> N
-    z : N
-    N : Type 0
-    # Check (three (three s)).
-    three (three s)
-        : N -> N
-    # Eval (three (three s)) z.
-        = s (s (s (s (s (s (s (s (s z))))))))
-        : N
-
+Here is a sample session:
 
 ## Source code
 
@@ -58,35 +45,22 @@ The purpose of the implementation is to keep the source uncomplicated and short.
 essential bits of source code can be found in the following files. It should be possible
 for you to just read the entire source code. You should start with the core
 
-* `syntax.ml` -- abstract syntax
+* `syntax.ml` -- abstract syntax of the input
 * `context.ml` -- contexts
-* `norm.ml` -- normalization
-* `typing.ml` -- type inference and normalization
+* `equal.ml` -- normalization
+* `typecheck.ml` -- type checking and conversion from abstract syntax to core type theory
+* `tt.ml` -- the core type theory
 
 and continue with the infrastructure
 
-* `tt.ml` -- interactive top level
-* `error.ml` -- error reporting
-* `desugar.ml` -- convert names to de Bruijn indices
-* `lexer.mll` and `parser.mly` -- concrete sytnax
-* `beautify.ml` and `print.ml` -- pretty printing
-
-
-## Inefficiency
-
-The code is meant to be short and sweet, and close to how type theory is presented on
-paper. Therefore, it is not suitable for a real implementation, as it will get horribly
-inefficient as soon as you try anything complicated. But it should be useful for
-experimentation.
+* `spartan.ml` -- interactive top level
+* `print.ml` -- printing and message support
+* `desugar.ml` -- conversion from parsed syntax to abstract syntax
+* `lexer.mll` and `parser.mly` -- parsing into concrete syntax
 
 
 ## What experiments should I perform to learn more?
 
-There are many things you can try, for example:
+There are many things you can try, for example try adding dependent sums, or basic types
+`unit`, `bool` and `nat`.
 
-* basic types `unit`, `bool` and `nat`
-* the eta rule for functions
-* dependent sums
-* cummulative universes, so that [A : Type k] implies [A : Type (k+1)]
-* better type inference so that variables need not be explicitly typed
-* prefix and infix operators

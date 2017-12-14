@@ -1,29 +1,35 @@
-(* Runtime values. *)
+(** {1 Spartan type theory} *)
 
+(** De Bruijn index. *)
 type index = int
 
+(** An atom is a primitive symbol. We tag atom names with integers so that
+    it is easy to generate fresh ones. *)
 type atom = Name.ident * int
 
-(** Values *)
+(** Expression *)
 type expr =
-  | Bound of index (* de Bruijn index *)
-  | Atom of atom (* primitive symbol *)
-  | Type (* the type of types *)
-  | Prod of ty abstraction (* dependent product *)
-  | Lambda of expr abstraction
-  | Apply of expr * expr
+  | Bound of index (** de Bruijn index *)
+  | Atom of atom (** primitive symbol *)
+  | Type (** the type of types *)
+  | Prod of (Name.ident * ty) * ty (** dependent product *)
+  | Lambda of (Name.ident * ty) * expr (** lambda abstraction *)
+  | Apply of expr * expr (** application *)
 
+(** Type *)
 and ty = Ty of expr
 
-and 'a abstraction = (Name.ident * ty) * 'a
+(** {2 Support for bound variables and atoms.} *)
 
-(** Create an atom from an identifier. *)
+(** Create a fresh atom from an identifier. *)
 let new_atom : Name.ident -> atom =
   let k = ref (-1) in
   fun x -> incr k ; (x, !k)
 
+(** [Type] as a type. *)
 let ty_Type = Ty Type
 
+(** [instantiate k e e'] instantiates deBruijn index [k] with [e] in expression [e']. *)
 let rec instantiate k e e' =
   match e' with
 
@@ -50,11 +56,12 @@ let rec instantiate k e e' =
      Apply (e1, e2)
 
 
+(** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
 and instantiate_ty k e (Ty t) =
   let t = instantiate k e t in
   Ty t
 
-(* Change atom [x] into bound index [k] in expression [e]. *)
+(** [abstract ~lvl x e] abstracts atom [x] into bound index [lvl] in expression [e]. *)
 let rec abstract ?(lvl=0) x e =
   match e with
   | Bound j -> Bound j
@@ -79,14 +86,18 @@ let rec abstract ?(lvl=0) x e =
      and e2 = abstract ~lvl x e2 in
      Apply (e1, e2)
 
+(** [abstract_ty ~lvl x t] abstracts atom [x] into bound index [lvl] in type [t]. *)
 and abstract_ty ?(lvl=0) x (Ty t) =
   let t = abstract ~lvl x t in
   Ty t
 
+(** [unabstract a e] instantiates de Bruijn index 0 with [a] in expression [e]. *)
 let unabstract a e = instantiate 0 (Atom a) e
 
+(** [unabstract_ty a t] instantiates de Bruijn index 0 with [a] in type [t]. *)
 let unabstract_ty a (Ty t) = Ty (instantiate 0 (Atom a) t)
 
+(** [occurs k e] returns [true] when de Bruijn index [k] occurs in expression [e]. *)
 let rec occurs k = function
   | Bound j -> j = k
   | Atom _ -> false
@@ -95,9 +106,11 @@ let rec occurs k = function
   | Lambda ((_, t), e) -> occurs_ty k t || occurs (k+1) e
   | Apply (e1, e2) -> occurs k e1 || occurs k e2
 
+(** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
 
-(****** Printing routines *****)
+(** {2 Printing routines, as taken from Andromeda} *)
+
 type print_env = Name.ident list
 
 let add_forbidden x forbidden = x :: forbidden
@@ -136,21 +149,11 @@ and print_expr' ~penv ?max_level e ppf =
 
       | Bound k -> print_debruijn penv k ppf
 
-      | Lambda a -> print_lambda ?max_level ~penv a ppf
+      | Lambda ((x, t), e) -> print_lambda ?max_level ~penv ((x, t), e) ppf
 
       | Apply (e1, e2) -> print_app ?max_level ~penv e1 e2 ppf
 
-      | Prod xts -> print_prod ?max_level ~penv xts ppf
-
-      (* | Eq (t, e1, e2) ->
-       *   print ~at_level:Level.eq "%t@ %s@ %t"
-       *     (print_expr ~max_level:Level.eq_left ~penv e1)
-       *     (Print.char_equal ())
-       *     (print_expr ~max_level:Level.eq_right ~penv e2)
-       *
-       * | Refl (t, e) ->
-       *   print ~at_level:Level.app "refl@ %t"
-       *     (print_expr ~max_level:Level.app_right ~penv  e) *)
+      | Prod ((x, t), u) -> print_prod ?max_level ~penv ((x, t), u) ppf
 
 and print_ty ?max_level ~penv (Ty t) ppf = print_expr ?max_level ~penv t ppf
 

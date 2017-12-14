@@ -1,18 +1,22 @@
-(** Conversion from concrete syntax to abstract syntax.
-    Here we also load all required files, which may not be
-    optimal but is systematic. *)
+(** Conversion from parsed syntax to abstract syntax.
 
-(** Conversion errors *)
+    The desugaring phase loads required files (but does not run them),
+    it converts variable names to de Bruijn indices, and it converts
+    the complex abstractions of [Input] to the simple ones of [Syntax].
+*)
+
+(** Desugaring errors *)
 type desugar_error =
   | UnknownIdentifier of Name.ident
   | AlreadyDefined of Name.ident
 
+(** The exception signalling a desugaring error*)
 exception Error of desugar_error Location.located
 
-(** [error ~loc err] raises the given runtime error. *)
+(** [error ~loc err] raises the given desugaring error. *)
 let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 
-(** Print error description. *)
+(** Print desugaring error. *)
 let print_error err ppf =
   match err with
   | UnknownIdentifier x -> Format.fprintf ppf "unknown identifier %t" (Name.print_ident x)
@@ -22,7 +26,7 @@ let print_error err ppf =
    Bruijn indices. *)
 type context = Name.ident list
 
-(** Initial context *)
+(** Initial empty context *)
 let initial = []
 
 (** Add a new identifier to the context. *)
@@ -37,7 +41,7 @@ let index x ctx =
   in
   search 0 ctx
 
-(** Desugar a term *)
+(** Desugar an expression *)
 let rec expr ctx {Location.data=e; Location.loc=loc} =
   match e with
 
@@ -81,12 +85,15 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        Location.locate ~loc (Syntax.Ascribe (e, t))
 
 
+(** Desugar a type, which at this stage is the same as an expressions. *)
 and ty ctx t = expr ctx t
 
+(** Desugar an optional type. *)
 and tyopt ctx = function
   | None -> None
   | Some t -> Some (ty ctx t)
 
+(** Desugar a product abstraction. *)
 and prod_abstraction ctx a : context * (Name.ident * Syntax.ty) list =
   let rec fold ctx = function
     | [] -> ctx, []
@@ -97,6 +104,7 @@ and prod_abstraction ctx a : context * (Name.ident * Syntax.ty) list =
   in
   fold ctx a
 
+(** Auxiliary function used to desugar product abstractions. *)
 and prod_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
   let rec fold ctx t lst = function
     | [] -> ctx, List.rev lst
@@ -109,6 +117,7 @@ and prod_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
   let t = ty ctx t in
   fold ctx t [] xs
 
+(** Desugar a lambda abstraction. *)
 and lambda_abstraction ctx a : context * (Name.ident * Syntax.ty option) list =
   let rec fold ctx = function
     | [] -> ctx, []
@@ -119,6 +128,7 @@ and lambda_abstraction ctx a : context * (Name.ident * Syntax.ty option) list =
   in
   fold ctx a
 
+(** Auxiliary function used to desugar lambda abstractions. *)
 and lambda_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty option) list =
   let rec fold ctx t lst = function
     | [] -> ctx, List.rev lst
@@ -132,8 +142,10 @@ and lambda_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty option) lis
   fold ctx t [] xs
 
 
+(** Desugar a toplevel. *)
 let rec toplevel ctx {Location.data=c; Location.loc=loc} =
 
+(** Desugar a non-located toplevel. *)
 let rec toplevel' ctx = function
 
     | Input.TopLoad fn ->
@@ -166,7 +178,7 @@ let rec toplevel' ctx = function
   let ctx, c = toplevel' ctx c in
   ctx, Location.locate ~loc c
 
-
+(** Load a file and desugar it. *)
 and load ctx fn =
   let cmds = Lexer.read_file Parser.file fn in
   let ctx, cmds = List.fold_left

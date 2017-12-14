@@ -8,9 +8,10 @@ type type_error =
   | FunctionExpected of TT.ty
   | CannotInferArgument of Name.ident
 
+(** Exception signalling a type error. *)
 exception Error of type_error Location.located
 
-(** [error ~loc err] raises the given runtime error. *)
+(** [error ~loc err] raises the given type-checking error. *)
 let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 
 (** Print error description. *)
@@ -35,6 +36,8 @@ let rec print_error ~penv err ppf =
   | CannotInferArgument x ->
      Format.fprintf ppf "cannot infer the type of %t" (Name.print_ident x)
 
+(** [infer ctx e] infers the type [ty] of expression [e]. It returns
+    the processed expression [e] and its type [ty].  *)
 let rec infer ctx {Location.data=e'; loc} =
   match e' with
 
@@ -86,7 +89,8 @@ let rec infer ctx {Location.data=e'; loc} =
      let e = check ctx e t in
      e, t
 
-
+(** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
+    It returns the processed expression [e]. *)
 and check ctx ({Location.data=e'; loc} as e) ty =
   match e' with
 
@@ -115,11 +119,13 @@ and check ctx ({Location.data=e'; loc} as e) ty =
        error ~loc (TypeExpected (ty, ty'))
 
 
-
+(** [check_ty ctx t] checks that [t] is a type in context [ctx]. It returns the processed
+   type [t]. *)
 and check_ty ctx t =
   let t = check ctx t TT.ty_Type in
   TT.Ty t
 
+(** Type-check a top-level command. *)
 let rec toplevel ~quiet ctx {Location.data=tc; loc} =
   let ctx = toplevel' ~quiet ctx tc in
   ctx
@@ -146,7 +152,7 @@ and toplevel' ~quiet ctx = function
 
   | Syntax.TopEval e ->
      let e, ty = infer ctx e in
-     let e = Equal.norm_expr ~strategy:Equal.Strong ctx e in
+     let e = Equal.norm_expr ~strategy:Equal.CBV ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
        (TT.print_expr ~penv:(Context.penv ctx) e)
        (TT.print_ty ~penv:(Context.penv ctx) ty) ;
@@ -159,6 +165,7 @@ and toplevel' ~quiet ctx = function
      if not quiet then Format.printf "%t is assumed.@." (Name.print_ident x) ;
      ctx
 
+(** Type-check the contents of a file. *)
 and topfile ~quiet ctx lst =
   let rec fold ctx = function
     | [] -> ctx

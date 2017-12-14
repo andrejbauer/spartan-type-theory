@@ -1,3 +1,6 @@
+(** Lexing with support for UTF8 characers. *)
+
+(** Reserved words. *)
 let reserved = [
   ("Axiom", Parser.AXIOM) ;
   ("Check", Parser.CHECK) ;

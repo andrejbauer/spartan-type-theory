@@ -1,4 +1,4 @@
-(** Spartan main program *)
+(** Command-line processing and the main program. *)
 
 (** The usage message. *)
 let usage = "Usage: spartan [option] ... [file] ..."
@@ -28,7 +28,7 @@ let options = Arg.align [
 
     ("--no-prelude",
      Arg.Unit (fun () -> Config.prelude_file := Config.PreludeNone),
-     " Do not load the prelude.m31 file");
+     " Do not load the prelude.tt file");
 
     ("--prelude",
      Arg.String (fun str -> Config.prelude_file := Config.PreludeFile str),
@@ -51,7 +51,7 @@ let options = Arg.align [
      "<file> Load <file> into the initial environment");
   ]
 
-(** Interactive toplevel *)
+(** Interactive toplevel. *)
 let interactive_shell state =
   Format.printf "Very spartan type theory@." ;
 
@@ -81,7 +81,7 @@ let interactive_shell state =
   with
     End_of_file -> ()
 
-(** Main program *)
+(** The main program. *)
 let main =
   Sys.catch_break true ;
   (* Parse the arguments. *)
@@ -116,7 +116,7 @@ let main =
     | Config.PreludeDefault ->
       (* look for prelude next to the executable and don't whine if it is not there *)
        let d = Filename.dirname Sys.argv.(0) in
-       let f = Filename.concat d "prelude.real" in
+       let f = Filename.concat d "prelude.tt" in
        if Sys.file_exists f then add_file true f
   end ;
 

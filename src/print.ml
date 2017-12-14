@@ -1,46 +1,29 @@
-(* let parens ?(max_level=9999) ?(at_level=0) ppf =
- *   if max_level < at_level then
- *     begin
- *       Format.fprintf ppf "(@[" ;
- *       Format.kfprintf (fun ppf -> Format.fprintf ppf "@])") ppf
- *     end
- *   else
- *     begin
- *       Format.fprintf ppf "@[" ;
- *       Format.kfprintf (fun ppf -> Format.fprintf ppf "@]") ppf
- *     end
- *
- * (\** Print a message at a given location [loc] of message type [msg_type]. *\)
- * let message ?(loc=Location.Nowhere) msg_type =
- *   match loc with
- *   | Location.Nowhere ->
- *      Format.eprintf "%s: " msg_type ;
- *      Format.kfprintf (fun ppf -> Format.fprintf ppf "@.") Format.err_formatter
- *   | Location.Location _ ->
- *      Format.eprintf "%s at %t:@\n" msg_type (Location.print loc) ;
- *      Format.kfprintf (fun ppf -> Format.fprintf ppf "@.") Format.err_formatter *)
+(** Support for pretty-printing and user messages. *)
 
-
-(** Pretty-printing functions *)
-
+(** Print a message with given verbosity level. *)
 let message ~verbosity =
   if verbosity <= !Config.verbosity then
     fun fmt -> Format.eprintf (fmt ^^ "@.")
   else
     Format.ifprintf Format.err_formatter
 
+(** Report an error. *)
 let error fmt = message ~verbosity:1 fmt
 
+(** Report a warning. *)
 let warning fmt = message ~verbosity:2 ("Warning: " ^^ fmt)
 
+(** Report debugging information. *)
 let debug fmt = message ~verbosity:3 ("Debug: " ^^ fmt)
 
+(** Print an expression, possibly parenthesized. *)
 let print ?(at_level=Level.no_parens) ?(max_level=Level.highest) ppf =
   if Level.parenthesize ~at_level ~max_level then
     fun fmt -> Format.fprintf ppf ("(" ^^ fmt ^^ ")")
   else
     Format.fprintf ppf
 
+(** Print a sequence with given separator and printer. *)
 let sequence print_u separator us ppf =
   match us with
     | [] -> ()
@@ -49,7 +32,7 @@ let sequence print_u separator us ppf =
       print_u u ppf ;
       List.iter (fun u -> print ppf "%s@ " separator ; print_u u ppf) us
 
-(** Unicode and ascii version of symbols *)
+(** Unicode and ascii versions of symbols. *)
 
 let char_lambda () = if !Config.ascii then "lambda" else "λ"
 let char_arrow ()  = if !Config.ascii then "->" else "→"
