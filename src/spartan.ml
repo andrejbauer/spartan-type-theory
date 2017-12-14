@@ -38,12 +38,6 @@ let options = Arg.align [
      Arg.Set Config.ascii,
      " Use ASCII characters only");
 
-    ("-v",
-     Arg.Unit (fun () ->
-         Format.printf "Andromeda %s (%s)@." Build.version Sys.os_type ;
-         exit 0),
-     " Print version information and exit");
-
     ("-n",
      Arg.Clear Config.interactive_shell,
      " Do not run the interactive toplevel");
@@ -55,7 +49,7 @@ let options = Arg.align [
 
 (** Interactive toplevel *)
 let interactive_shell state =
-  Format.printf "Spartan %s@." Build.version ;
+  Format.printf "Spartan type theory@." ;
 
   let rec loop state =
     let state =
