@@ -232,7 +232,7 @@ and print_lambda ?max_level ~penv ((x, u), e) ppf =
 (** [print_prod a e t ppf] prints a lambda abstraction using formatter [ppf]. *)
 and print_prod ?max_level ~penv ((x, u), t) ppf =
   if not (occurs_ty 0 t) then
-    Print.print ?max_level ~at_level:Level.arr ppf "%t@ %s@ %t"
+    Print.print ?max_level ~at_level:Level.arr ppf "@[<hov>%t@ %s@ %t@]"
           (print_ty ~max_level:Level.arr_left ~penv u)
           (Print.char_arrow ())
           (print_ty ~max_level:Level.arr_right ~penv:(add_forbidden (Name.anonymous ()) penv) t)

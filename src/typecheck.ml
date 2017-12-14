@@ -81,6 +81,11 @@ let rec infer ctx {Location.data=e'; loc} =
           TT.instantiate_ty 0 e2 u
      end
 
+  | Syntax.Ascribe (e, t) ->
+     let t = check_ty ctx t in
+     let e = check ctx e t in
+     e, t
+
 
 and check ctx ({Location.data=e'; loc} as e) ty =
   match e' with
@@ -100,13 +105,16 @@ and check ctx ({Location.data=e'; loc} as e) ty =
   | Syntax.Apply _
   | Syntax.Prod _
   | Syntax.Var _
-  | Syntax.Type ->
+  | Syntax.Type
+  | Syntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
      then
        e
      else
        error ~loc (TypeExpected (ty, ty'))
+
+
 
 and check_ty ctx t =
   let t = check ctx t TT.ty_Type in

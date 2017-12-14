@@ -70,6 +70,7 @@ plain_term:
   | PROD a=prod_abstraction COMMA e=term        { Input.Prod (a, e) }
   | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
   | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
+  | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:

@@ -8,6 +8,7 @@ and expr' =
   | Lambda of (Name.ident list * ty option) list * ty
   | Apply of expr * expr
   | Arrow of expr * expr
+  | Ascribe of expr * ty
 
 and ty = expr
 

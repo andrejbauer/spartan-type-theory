@@ -24,7 +24,7 @@ exception Error of error Location.located
 
 let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 
-let create_lexbuf ?(fn="?") stream =
+let create_lexbuf ?(fn="") stream =
   let pos_end =
     Lexing.{
       pos_fname = fn;
@@ -36,10 +36,10 @@ let create_lexbuf ?(fn="?") stream =
   { pos_start = pos_end; pos_end; stream ;
     line_limit = None; end_of_input = false; }
 
-let from_channel ?(fn="?") fh =
+let from_channel ?(fn="") fh =
   create_lexbuf ~fn (Sedlexing.Utf8.from_channel fh)
 
-let from_string ?(fn="?") s =
+let from_string ?(fn="") s =
   create_lexbuf ~fn (Sedlexing.Utf8.from_string s)
 
 let lexeme { stream;_ } = Sedlexing.Utf8.lexeme stream
