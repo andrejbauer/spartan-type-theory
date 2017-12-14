@@ -122,7 +122,7 @@ and expr_whnf ctx e1 e2 =
        | _, _ -> None
      in
      begin
-       match collect [e12] [e22] e11 e22 with
+       match collect [e12] [e22] e11 e21 with
        | None -> false
        | Some ((a1, sp1), (a2, sp2)) -> spine ctx (a1, sp1) (a2, sp2)
      end
@@ -141,8 +141,11 @@ and ty ctx (TT.Ty ty1) (TT.Ty ty2) =
     where [a] is an atom.
  *)
 and spine ctx (a1, sp1) (a2, sp2) =
-  a1 == a2 &&
+  Format.eprintf "we are in a spine at %t & %t@."
+    (TT.print_atom a1) (TT.print_atom a2) ;
+  a1 = a2 &&
   begin
+    Format.eprintf "we are still in a spine %d %d@." (List.length sp1) (List.length sp2) ;
     let rec fold ty sp1 sp2 =
       match sp1, sp2 with
       | [e1], [e2] -> expr ctx e1 e2 ty
