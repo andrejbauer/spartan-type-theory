@@ -4,14 +4,12 @@ type expr = expr' Location.located
 and expr' =
   | Var of Name.ident
   | Type
-  | Prod of ty abstraction
-  | Lambda of expr abstraction
+  | Prod of (Name.ident list * ty) list * ty
+  | Lambda of (Name.ident list * ty option) list * ty
   | Apply of expr * expr
   | Arrow of expr * expr
 
 and ty = expr
-
-and 'a abstraction = (Name.ident list * ty) list * 'a
 
 type toplevel = toplevel' Location.located
 and toplevel' =

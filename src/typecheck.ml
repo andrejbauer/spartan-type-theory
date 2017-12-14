@@ -4,7 +4,9 @@
 type type_error =
   | InvalidIndex of int
   | TypeExpected of TT.ty * TT.ty
+  | TypeExpectedButFunction of TT.ty
   | FunctionExpected of TT.ty
+  | CannotInferArgument of Name.ident
 
 exception Error of type_error Location.located
 
@@ -14,14 +16,24 @@ let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 (** Print error description. *)
 let rec print_error ~penv err ppf =
   match err with
+
   | InvalidIndex k -> Format.fprintf ppf "invalid de Bruijn index %d, please report" k
+
   | TypeExpected (ty_expected, ty_actual) ->
      Format.fprintf ppf "this expression should have type %t but has type %t"
                         (TT.print_ty ~penv ty_expected)
                         (TT.print_ty ~penv ty_actual)
-  | FunctionExpected t ->
+
+  | TypeExpectedButFunction ty ->
+     Format.fprintf ppf "this expression is a function but should have type %t"
+                        (TT.print_ty ~penv ty)
+
+  | FunctionExpected ty ->
      Format.fprintf ppf "this expression should be a function but has type %t"
-                        (TT.print_ty ~penv t)
+                        (TT.print_ty ~penv ty)
+
+  | CannotInferArgument x ->
+     Format.fprintf ppf "cannot infer the type of %t" (Name.print_ident x)
 
 let rec infer ctx {Location.data=e'; loc} =
   match e' with
@@ -45,7 +57,7 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Prod ((x, t), u),
      TT.ty_Type
 
-  | Syntax.Lambda ((x, t), e) ->
+  | Syntax.Lambda ((x, Some t), e) ->
      let t = check_ty ctx t in
      let x' = TT.new_atom x in
      let ctx  = Context.extend_ident x' t ctx in
@@ -54,6 +66,9 @@ let rec infer ctx {Location.data=e'; loc} =
      let u = TT.abstract_ty x' u in
      TT.Lambda ((x, t), e),
      TT.Ty (TT.Prod ((x, t), u))
+
+  | Syntax.Lambda ((x, None), _) ->
+     error ~loc (CannotInferArgument x)
 
   | Syntax.Apply (e1, e2) ->
      let e1, t1 = infer ctx e1 in
@@ -69,8 +84,20 @@ let rec infer ctx {Location.data=e'; loc} =
 
 and check ctx ({Location.data=e'; loc} as e) ty =
   match e' with
+
+  | Syntax.Lambda ((x, None), e) ->
+     begin
+       match Equal.as_prod ctx ty with
+       | None -> error ~loc (TypeExpectedButFunction ty)
+       | Some ((x, t), u) ->
+          let x' = TT.new_atom x in
+          let ctx = Context.extend_ident x' t ctx
+          and u = TT.unabstract_ty x' u in
+          check ctx e u
+     end
+
+  | Syntax.Lambda ((_, Some _), _)
   | Syntax.Apply _
-  | Syntax.Lambda _
   | Syntax.Prod _
   | Syntax.Var _
   | Syntax.Type ->

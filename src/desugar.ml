@@ -50,7 +50,7 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
     | Input.Type -> Location.locate ~loc Syntax.Type
 
     | Input.Prod (a, u) ->
-       let ctx, xts = abstraction ctx a in
+       let ctx, xts = prod_abstraction ctx a in
        let u = ty ctx u in
        List.fold_right
          (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Prod ((x, t), e)))
@@ -64,10 +64,10 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
        Location.locate ~loc (Syntax.Prod ((x, t1), t2))
 
     | Input.Lambda (a, e) ->
-       let ctx, lst = abstraction ctx a in
+       let ctx, lst = lambda_abstraction ctx a in
        let e = expr ctx e in
        List.fold_right
-         (fun (x, t) e -> Location.locate ~loc:t.Location.loc (Syntax.Lambda ((x, t), e)))
+         (fun (x, topt) e -> Location.locate ~loc (Syntax.Lambda ((x, topt), e)))
          lst e
 
     | Input.Apply (e1, e2) ->
@@ -78,17 +78,21 @@ let rec expr ctx {Location.data=e; Location.loc=loc} =
 
 and ty ctx t = expr ctx t
 
-and abstraction ctx a : context * (Name.ident * Syntax.ty) list =
+and tyopt ctx = function
+  | None -> None
+  | Some t -> Some (ty ctx t)
+
+and prod_abstraction ctx a : context * (Name.ident * Syntax.ty) list =
   let rec fold ctx = function
     | [] -> ctx, []
     | (xs, t) :: lst ->
-       let ctx, xts = abstraction1 ctx xs t in
+       let ctx, xts = prod_abstraction1 ctx xs t in
        let ctx, yts = fold ctx lst in
        ctx, xts @ yts
   in
   fold ctx a
 
-and abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
+and prod_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
   let rec fold ctx t lst = function
     | [] -> ctx, List.rev lst
     | x :: xs ->
@@ -98,6 +102,28 @@ and abstraction1 ctx xs t : context * (Name.ident * Syntax.ty) list =
        fold ctx t lst xs
   in
   let t = ty ctx t in
+  fold ctx t [] xs
+
+and lambda_abstraction ctx a : context * (Name.ident * Syntax.ty option) list =
+  let rec fold ctx = function
+    | [] -> ctx, []
+    | (xs, t) :: lst ->
+       let ctx, xts = lambda_abstraction1 ctx xs t in
+       let ctx, yts = fold ctx lst in
+       ctx, xts @ yts
+  in
+  fold ctx a
+
+and lambda_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty option) list =
+  let rec fold ctx t lst = function
+    | [] -> ctx, List.rev lst
+    | x :: xs ->
+       let ctx = extend x ctx
+       and lst = (x, t) :: lst
+       and t = Syntax.shift_tyopt 0 1 t in
+       fold ctx t lst xs
+  in
+  let t = tyopt ctx t in
   fold ctx t [] xs
 
 

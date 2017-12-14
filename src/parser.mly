@@ -6,6 +6,7 @@
 
 (* Names *)
 %token <Name.ident> NAME
+%token UNDERSCORE
 
 (* Parentheses & punctuations *)
 %token LPAREN RPAREN PERIOD
@@ -65,10 +66,10 @@ plain_topcomp:
 (* Main syntax tree *)
 term : mark_location(plain_term) { $1 }
 plain_term:
-  | e=plain_infix_term                   { e }
-  | PROD a=abstraction COMMA e=term      { Input.Prod (a, e) }
-  | e1=infix_term ARROW e2=term          { Input.Arrow (e1, e2) }
-  | LAMBDA a=abstraction DARROW e=term   { Input.Lambda (a, e) }
+  | e=plain_infix_term                          { e }
+  | PROD a=prod_abstraction COMMA e=term        { Input.Prod (a, e) }
+  | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
+  | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:
@@ -104,6 +105,7 @@ var_name:
   | NAME                     { $1 }
   | LPAREN op=infix RPAREN   { op.Location.data }
   | LPAREN op=prefix RPAREN  { op.Location.data }
+  | UNDERSCORE               { Name.anonymous () }
 
 %inline infix:
   | op=INFIXOP0    { op }
@@ -115,10 +117,16 @@ var_name:
 %inline prefix:
   | op=PREFIXOP { op }
 
-abstraction:
-  | lst=nonempty_list(abstract1)  { lst }
+lambda_abstraction:
+  | xs=nonempty_list(var_name) COLON t=term  { [(xs, Some t)] }
+  | xs=nonempty_list(var_name)               { [(xs, None)] }
+  | lst=nonempty_list(typed_binder)          { List.map (fun (xs, t) -> (xs, Some t)) lst }
 
-abstract1:
+prod_abstraction:
+  | xs=nonempty_list(var_name) COLON t=term  { [(xs, t)] }
+  | lst=nonempty_list(typed_binder)          { lst }
+
+typed_binder:
   | LPAREN xs=nonempty_list(var_name) COLON t=term RPAREN { (xs, t) }
 
 mark_location(X):

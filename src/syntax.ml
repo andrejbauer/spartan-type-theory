@@ -9,13 +9,11 @@ type expr = expr' Location.located
 and expr' =
   | Var of index
   | Type
-  | Prod of ty abstraction
-  | Lambda of expr abstraction
+  | Prod of (Name.ident * ty) * ty
+  | Lambda of (Name.ident * ty option) * expr
   | Apply of expr * expr
 
 and ty = expr
-
-and 'a abstraction = (Name.ident * ty) * 'a
 
 type toplevel = toplevel' Location.located
 and toplevel' =
@@ -37,8 +35,8 @@ and shift' n k = function
      let t = shift_ty n k t
      and u = shift_ty (n + 1) k u in
      Prod ((x, t), u)
-  | Lambda ((x, t), e) ->
-     let t = shift_ty n k t
+  | Lambda ((x, topt), e) ->
+     let t = shift_tyopt n k topt
      and e = shift (n + 1) k e in
      Lambda ((x, t), e)
   | Apply (e1, e2) ->
@@ -47,3 +45,7 @@ and shift' n k = function
      Apply (e1, e2)
 
 and shift_ty n k t = shift n k t
+
+and shift_tyopt n k = function
+  | None -> None
+  | Some t -> Some (shift_ty n k t)

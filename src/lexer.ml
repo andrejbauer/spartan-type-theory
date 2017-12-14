@@ -71,6 +71,7 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
      String.iter (fun c -> if c = '\n' then incr n) s;
      Ulexbuf.new_line ~n:!n lexbuf;
      Parser.QUOTED_STRING (String.sub s 1 (l - 2))
+  | '_'                      -> f (); Parser.UNDERSCORE
   | '('                      -> f (); Parser.LPAREN
   | ')'                      -> f (); Parser.RPAREN
   | '.'                      -> f (); Parser.PERIOD
