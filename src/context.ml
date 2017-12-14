@@ -1,9 +1,9 @@
 (* Typing context *)
 
 (* A de Bruijn index is bound to a type and an atom. *)
-type entry = Value.atom * Value.ty
+type entry = TT.atom * TT.ty
 
-type definition = Value.atom * Value.expr
+type definition = TT.atom * TT.expr
 
 type context =
   {
