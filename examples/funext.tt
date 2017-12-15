@@ -1,8 +1,8 @@
 (* Check that function extensionality holds. *)
 
 Axiom A : Type.
-Axiom P : (A -> A) → Type.
-Axiom f : A -> A.
+Axiom P : (A → A) → Type.
+Axiom f : A → A.
 
 Definition id := λ (A : Type) (x : A) ⇒ x.
 
