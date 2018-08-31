@@ -14,7 +14,7 @@ let initial = {
 }
 
 (** Names of bound variables, used for printing de Bruijn indices. *)
-let penv {typecheck} = Context.penv typecheck
+let penv {typecheck;_} = Context.penv typecheck
 
 (** Read a top-level command from the standard input and execute it. *)
 let exec_interactive {desugar; typecheck} =

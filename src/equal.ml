@@ -46,7 +46,7 @@ let norm_ty ~strategy ctx (TT.Ty ty) =
   TT.Ty ty
 
 (** Normalize a type to a product. *)
-let rec as_prod ctx t =
+let as_prod ctx t =
   let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
   match t' with
   | TT.Prod ((x, t), u) -> Some ((x, t), u)

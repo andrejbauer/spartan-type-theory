@@ -1,7 +1,7 @@
 default: spartan.native
 
 OCAMLBUILD = ocamlbuild
-OCAMLBUILD_FLAGS = -j 4 -lib unix -use-ocamlfind -pkg menhirLib -pkg sedlex
+OCAMLBUILD_FLAGS = -j 4 -cflags -w,+a-4-27-29-50,"-warn-error +a" -lib unix -use-ocamlfind -pkg menhirLib -pkg sedlex
 OCAMLBUILD_MENHIRFLAGS = -use-menhir -menhir "menhir --explain"
 SRCDIR = src
 

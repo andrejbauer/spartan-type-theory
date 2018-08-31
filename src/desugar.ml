@@ -146,7 +146,7 @@ and lambda_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty option) lis
 let rec toplevel ctx {Location.data=c; Location.loc=loc} =
 
 (** Desugar a non-located toplevel. *)
-let rec toplevel' ctx = function
+let toplevel' ctx = function
 
     | Input.TopLoad fn ->
        let ctx, cmds = load ctx fn in
