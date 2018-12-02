@@ -1,4 +1,4 @@
-(** Spratan type checking. *)
+(** Spartan type checking. *)
 
 (** Type errors *)
 type type_error =
@@ -15,7 +15,7 @@ exception Error of type_error Location.located
 let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 
 (** Print error description. *)
-let rec print_error ~penv err ppf =
+let print_error ~penv err ppf =
   match err with
 
   | InvalidIndex k -> Format.fprintf ppf "invalid de Bruijn index %d, please report" k

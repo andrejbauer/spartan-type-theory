@@ -53,7 +53,7 @@ for you to just read the entire source code. You should start with the core:
 * [`context.ml`](src/context.ml) -- contexts
 * [`equal.ml`](src/equal.ml) -- normalization
 * [`typecheck.ml`](src/typecheck.ml) -- type checking and conversion from abstract syntax to core type theory
-* [`tt.ml`](src/tt.ml) -- the core type theory
+* [`TT.ml`](src/TT.ml) -- the core type theory
 
 and continue with the infrastructure
 
