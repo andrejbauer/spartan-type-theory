@@ -44,21 +44,3 @@ let arr_left = arr - 1
 let arr_right = arr
 
 let ascription = 950
-
-let jdg = highest
-
-let ml_app = 300
-let ml_app_arg = ml_app - 1
-
-let ml_prod = 400
-let ml_prod_arg = ml_prod - 1
-
-let ml_arr = 500
-let ml_arr_left = ml_arr - 1
-let ml_arr_right = ml_arr
-
-let ml_handler = ml_arr
-let ml_handler_left = ml_arr_left
-let ml_handler_right = ml_arr_right
-
-let ml_forall_r = highest
