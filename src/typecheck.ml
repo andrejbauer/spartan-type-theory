@@ -8,13 +8,11 @@ type type_error =
   | FunctionExpected of TT.ty
   | CannotInferArgument of Name.ident
 
-(** Exception signalling a type error. *)
 exception Error of type_error Location.located
 
 (** [error ~loc err] raises the given type-checking error. *)
 let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
 
-(** Print error description. *)
 let print_error ~penv err ppf =
   match err with
 
@@ -81,7 +79,7 @@ let rec infer ctx {Location.data=e'; loc} =
        | Some ((x, t), u) ->
           let e2 = check ctx e2 t in
           TT.Apply (e1, e2),
-          TT.instantiate_ty 0 e2 u
+          TT.instantiate_ty e2 u
      end
 
   | Syntax.Ascribe (e, t) ->
@@ -125,7 +123,6 @@ and check_ty ctx t =
   let t = check ctx t TT.ty_Type in
   TT.Ty t
 
-(** Type-check a top-level command. *)
 let rec toplevel ~quiet ctx {Location.data=tc; loc} =
   let ctx = toplevel' ~quiet ctx tc in
   ctx
@@ -165,7 +162,6 @@ and toplevel' ~quiet ctx = function
      if not quiet then Format.printf "%t is assumed.@." (Name.print_ident x) ;
      ctx
 
-(** Type-check the contents of a file. *)
 and topfile ~quiet ctx lst =
   let rec fold ctx = function
     | [] -> ctx

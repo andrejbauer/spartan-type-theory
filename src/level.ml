@@ -16,9 +16,6 @@ let least = 0
 
 let no_parens = least
 
-let proj = no_parens
-let proj_left = no_parens
-
 let prefix = 50
 let prefix_arg = 50
 

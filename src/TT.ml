@@ -21,6 +21,8 @@ and ty = Ty of expr
 
 (** {2 Support for bound variables and atoms.} *)
 
+let atom_name (x, _) = x
+
 (** Create a fresh atom from an identifier. *)
 let new_atom : Name.ident -> atom =
   let k = ref (-1) in
@@ -29,36 +31,36 @@ let new_atom : Name.ident -> atom =
 (** [Type] as a type. *)
 let ty_Type = Ty Type
 
-(** [instantiate k e e'] instantiates deBruijn index [k] with [e] in expression [e']. *)
-let rec instantiate k e e' =
+(** [instantiate ~lvl:k e e'] instantiates deBruijn index [k] with [e] in expression [e']. *)
+let rec instantiate ?(lvl=0) e e' =
   match e' with
 
   | Bound j ->
-     if j = k then e else e'
+     if j = lvl then e else e'
 
   | Atom _ -> e'
 
   | Type -> e'
 
   | Prod ((x, t), u) ->
-     let t = instantiate_ty k e t
-     and u = instantiate_ty (k+1) e u in
+     let t = instantiate_ty ~lvl e t
+     and u = instantiate_ty ~lvl:(lvl+1) e u in
      Prod ((x, t), u)
 
   | Lambda ((x, t), e2) ->
-     let t = instantiate_ty k e t
-     and e2 = instantiate (k+1) e e2 in
+     let t = instantiate_ty ~lvl e t
+     and e2 = instantiate ~lvl:(lvl+1) e e2 in
      Lambda ((x, t), e2)
 
   | Apply (e1, e2) ->
-     let e1 = instantiate k e e1
-     and e2 = instantiate k e e2 in
+     let e1 = instantiate ~lvl e e1
+     and e2 = instantiate ~lvl e e2 in
      Apply (e1, e2)
 
 
 (** [instantiate k e t] instantiates deBruijn index [k] with [e] in type [t]. *)
-and instantiate_ty k e (Ty t) =
-  let t = instantiate k e t in
+and instantiate_ty ?(lvl=0) e (Ty t) =
+  let t = instantiate ~lvl e t in
   Ty t
 
 (** [abstract ~lvl x e] abstracts atom [x] into bound index [lvl] in expression [e]. *)
@@ -92,10 +94,10 @@ and abstract_ty ?(lvl=0) x (Ty t) =
   Ty t
 
 (** [unabstract a e] instantiates de Bruijn index 0 with [a] in expression [e]. *)
-let unabstract a e = instantiate 0 (Atom a) e
+let unabstract a e = instantiate (Atom a) e
 
 (** [unabstract_ty a t] instantiates de Bruijn index 0 with [a] in type [t]. *)
-let unabstract_ty a (Ty t) = Ty (instantiate 0 (Atom a) t)
+let unabstract_ty a (Ty t) = Ty (instantiate (Atom a) t)
 
 (** [occurs k e] returns [true] when de Bruijn index [k] occurs in expression [e]. *)
 let rec occurs k = function
@@ -109,9 +111,7 @@ let rec occurs k = function
 (** [occurs_ty k t] returns [true] when de Bruijn index [k] occurs in type [t]. *)
 and occurs_ty k (Ty t) = occurs k t
 
-(** {2 Printing routines, as taken from Andromeda} *)
-
-type print_env = Name.ident list
+(** {2 Printing routines} *)
 
 let add_forbidden x forbidden = x :: forbidden
 

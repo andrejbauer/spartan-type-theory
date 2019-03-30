@@ -17,7 +17,7 @@ type context =
 let initial = { idents = [] ; defs = [] }
 
 (** The list of names which should not be used for printing bound variables. *)
-let penv {idents; _} = List.map (fun ((x, _), _) -> x) idents
+let penv {idents; _} = List.map (fun (x, _) -> TT.atom_name x) idents
 
 (** Extend the context with an identifier. *)
 let extend_ident a t ctx = { ctx with idents = (a, t) :: ctx.idents }

@@ -35,7 +35,7 @@ let rec norm_expr ~strategy ctx e =
     begin
       match e1 with
       | TT.Lambda (_, e') ->
-        let e' = TT.instantiate 0 e2 e' in
+        let e' = TT.instantiate e2 e' in
         norm_expr ~strategy ctx e'
       | _ -> TT.Apply (e1, e2)
     end
@@ -146,20 +146,20 @@ and spine ctx (a1, sp1) (a2, sp2) =
     let rec fold ty sp1 sp2 =
       match as_prod ctx ty with
       | None -> assert false
-      | Some ((x, t), u) -> 
+      | Some ((x, t), u) ->
         begin
           match sp1, sp2 with
-          | [e1], [e2] -> expr ctx e1 e2 t 
+          | [e1], [e2] -> expr ctx e1 e2 t
           | e1 :: sp1, e2 :: sp2 ->
             expr ctx e1 e2 t &&
             begin
-              let u = TT.instantiate_ty 0 e1 u in
+              let u = TT.instantiate_ty e1 u in
               fold u sp1 sp2
             end
           | _, _ ->
             (* We should never be here, as the lengths of the spines should match. *)
             assert false
-        end 
+        end
     in
     match Context.lookup_atom_ty a1 ctx with
     | None -> assert false

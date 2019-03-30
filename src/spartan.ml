@@ -19,11 +19,11 @@ let options = Arg.align [
      " Set the maximum number of columns of pretty printing");
 
     ("--wrapper",
-     Arg.String (fun str -> Config.wrapper := Some [str]),
+     Arg.String (fun str -> Config.wrapper := [str]),
      "<program> Specify a command-line wrapper to be used (such as rlwrap or ledit)");
 
     ("--no-wrapper",
-     Arg.Unit (fun () -> Config.wrapper := None),
+     Arg.Unit (fun () -> Config.wrapper := []),
      " Do not use a command-line wrapper");
 
     ("--no-prelude",
@@ -92,8 +92,8 @@ let main =
   (* Attempt to wrap yourself with a line-editing wrapper. *)
   if !Config.interactive_shell then
     begin match !Config.wrapper with
-      | None -> ()
-      | Some lst ->
+      | [] -> ()
+      | _::_ as lst ->
         let n = Array.length Sys.argv + 2 in
         let args = Array.make n "" in
         Array.blit Sys.argv 0 args 1 (n - 2) ;
