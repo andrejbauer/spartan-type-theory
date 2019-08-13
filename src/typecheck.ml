@@ -11,7 +11,7 @@ type type_error =
 exception Error of type_error Location.located
 
 (** [error ~loc err] raises the given type-checking error. *)
-let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
+let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))
 
 let print_error ~penv err ppf =
   match err with
