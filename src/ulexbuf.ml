@@ -22,7 +22,7 @@ let print_error err ppf = match err with
 
 exception Error of error Location.located
 
-let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
+let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))
 
 let create_lexbuf ?(fn="") stream =
   let pos_end =

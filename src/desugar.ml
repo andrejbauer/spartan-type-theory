@@ -14,7 +14,7 @@ type desugar_error =
 exception Error of desugar_error Location.located
 
 (** [error ~loc err] raises the given desugaring error. *)
-let error ~loc err = Pervasives.raise (Error (Location.locate ~loc err))
+let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))
 
 (** Print desugaring error. *)
 let print_error err ppf =
