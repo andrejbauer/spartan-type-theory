@@ -12,7 +12,6 @@ default: spartan.native
 ### Compilation of OCaml files
 
 spartan.byte spartan.native spartan.d.byte spartan.p.native:
-	echo $$PATH
 	ocamlbuild $(OCAMLBUILD_MENHIRFLAGS) $(OCAMLBUILD_FLAGS) $@
 
 # Cleaning up

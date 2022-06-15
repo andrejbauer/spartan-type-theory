@@ -3,7 +3,7 @@
 This repository shows how to implement a minimalist type theory of the kind that is called
 "spartan" by some people. The implementation was presented at the [School and Workshop on
 Univalent Mathematics](https://unimath.github.io/bham2017/) which took place at the
-University of Birmingham in December 2017. The video recording of the lecture [How to implement type theory in an hour](https://vimeo.com/286652934) is now available.
+University of Birmingham in December 2017.
 
 ## The type theory
 
