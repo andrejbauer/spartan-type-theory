@@ -1,0 +1,19 @@
+opam-version: "2.0"
+name: "spartan"
+version: "0.1"
+synopsis: "a minimalistic impmlementation of dependent type theory"
+description: """
+This project shows how to implement a minimalist type theory of the kind that is called "spartan" by some people.
+The implementation was presented at the School and Workshop on Univalent Mathematics which took place at the University of Birmingham in December 2017.
+"""
+maintainer: "Andrej Bauer <andrej.bauer@andrej.com>"
+authors: "Andrej Bauer <andrej.bauer>"
+license: "MIT License"
+homepage: "https://github.com/andrejbauer/spartan-type-theory"
+bug-reports: ""
+dev-repo: "https://github.com/andrejbauer/spartan-type-theory"
+depends: [ "ocaml" "dune" "menhir" "menhirLib" "sedlex"]
+build: [
+  [make]
+]
+install: [make "install"]

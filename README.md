@@ -27,10 +27,9 @@ Top-level commands:
 
 * [OCaml](https://ocaml.org) and [OPAM](https://opam.ocaml.org)
 
-* The OPAM packages `menhir` and `sedlex`:
+* The OPAM packages `dune`, `menhir`, `mehirLib` and `sedlex`:
 
-        opam install menhir
-        opam install sedlex
+        opam install dune menhir menihirLib sedlex
 
 * It is recommended that you also install the `rlwrap` or `ledit` command line wrapper.
 
@@ -38,10 +37,15 @@ Top-level commands:
 
 You can type:
 
-* `make` to make the `spartan.native` executable.
-* `make byte` to make the bytecode `spartan.byte` executable.
-* `make clean` to clean up.
-* `make doc` to generate HTML documentation (see the generated [`spartan.docdir/index.html`](spartan.docdir/index.html)).
+* `dune build` to compile the `spartan.exe` executable.
+* `dune clean` to clean up.
+
+## Usage
+
+Once you compile the program, you can run it in interactive mode as `./spartan.exe`
+
+Run `./spartan.exe --help` to see the command-line options and general usage.
+
 
 ## Source code
 
@@ -61,7 +65,6 @@ and continue with the infrastructure
 * [`print.ml`](src/print.ml) -- printing and message support
 * [`desugar.ml`](src/desugar.ml) -- conversion from parsed syntax to abstract syntax
 * [`lexer.ml`](src/lexer.ml) and [`parser.mly`](src/parser.mly) -- parsing into concrete syntax
-
 
 ## What experiments should I perform to learn more?
 

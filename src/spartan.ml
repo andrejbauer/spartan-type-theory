@@ -82,7 +82,7 @@ let interactive_shell state =
     End_of_file -> ()
 
 (** The main program. *)
-let main =
+let _main =
   Sys.catch_break true ;
   (* Parse the arguments. *)
   Arg.parse

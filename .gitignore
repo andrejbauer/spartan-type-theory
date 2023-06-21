@@ -2,3 +2,4 @@ _build
 /spartan.native
 /spartan.byte
 /spartan.docdir
+/spartan.exe
