@@ -6,7 +6,7 @@ open Util
 type index = int
 
 (** Expressions *)
-type expr = expr' Location.located
+type expr = expr' Location.t
 and expr' =
   | Var of index
   | Type
@@ -19,7 +19,7 @@ and expr' =
 and ty = expr
 
 (** Top-level commands. *)
-type toplevel = toplevel' Location.located
+type toplevel = toplevel' Location.t
 and toplevel' =
   | TopLoad of toplevel list
   | TopDefinition of Name.ident * expr

@@ -3,7 +3,7 @@
 open Util
 
 (** Parsed expression. *)
-type expr = expr' Location.located
+type expr = expr' Location.t
 and expr' =
   | Var of Name.ident
   | Type
@@ -17,7 +17,7 @@ and expr' =
 and ty = expr
 
 (** Parsed top-level command. *)
-type toplevel = toplevel' Location.located
+type toplevel = toplevel' Location.t
 and toplevel' =
   | TopLoad of string
   | TopDefinition of Name.ident * expr

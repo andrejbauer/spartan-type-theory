@@ -12,7 +12,7 @@ type type_error =
   | FunctionExpected of TT.ty
   | CannotInferArgument of Name.ident
 
-exception Error of type_error Location.located
+exception Error of type_error Location.t
 
 (** [error ~loc err] raises the given type-checking error. *)
 let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))

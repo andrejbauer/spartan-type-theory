@@ -15,7 +15,7 @@ type desugar_error =
   | AlreadyDefined of Name.ident
 
 (** The exception signalling a desugaring error*)
-exception Error of desugar_error Location.located
+exception Error of desugar_error Location.t
 
 (** [error ~loc err] raises the given desugaring error. *)
 let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))

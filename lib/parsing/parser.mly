@@ -6,7 +6,7 @@ open Util
 
 (* Infix operations a la OCaml *)
 
-%token <Util.Name.ident Util.Location.located> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4
+%token <Util.Name.ident Util.Location.t> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4
 
 (* Names *)
 %token <Util.Name.ident> NAME

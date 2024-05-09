@@ -1,8 +1,8 @@
-type t =
+type location =
   | Location of Lexing.position * Lexing.position (** delimited location *)
   | Nowhere (** no location *)
 
-type 'a located = { data : 'a ; loc : t }
+type 'a t = { data : 'a ; loc : location }
 
 let nowhere = Nowhere
 
