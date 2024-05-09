@@ -20,9 +20,9 @@ let print_error err ppf = match err with
   | BadNumeral s -> Format.fprintf ppf "Bad numeral %s" s
   | UnclosedComment -> Format.fprintf ppf "Input ended inside unclosed comment"
 
-exception Error of error Location.located
+exception Error of error Util.Location.located
 
-let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))
+let error ~loc err = Stdlib.raise (Error (Util.Location.locate ~loc err))
 
 let create_lexbuf ?(fn="") stream =
   let pos_end =
@@ -55,7 +55,7 @@ let new_line ?(n=1) lexbuf =
         pos_bol = lcp.pos_cnum ;
       }
 
-let update_pos ({pos_end; pos_start; stream;_} as buf) =
+let update_pos ({pos_end; stream;_} as buf) =
   let p_start, p_end = Sedlexing.loc stream in
   buf.pos_start <- {pos_end with Lexing.pos_cnum = p_start};
   buf.pos_end <- {pos_end with Lexing.pos_cnum = p_end }

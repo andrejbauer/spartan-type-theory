@@ -9,7 +9,7 @@ type context
 val initial : context
 
 (** The exception signalling a desugaring error*)
-exception Error of desugar_error Location.located
+exception Error of desugar_error Util.Location.located
 
 (** Print desugaring error. *)
 val print_error : desugar_error -> Format.formatter -> unit
@@ -18,4 +18,4 @@ val print_error : desugar_error -> Format.formatter -> unit
 val load : context -> string -> context * Syntax.toplevel list
 
 (** Desugar a toplevel. *)
-val toplevel : context -> Input.toplevel -> context * Syntax.toplevel
+val toplevel : context -> Parsing.Syntax.toplevel -> context * Syntax.toplevel

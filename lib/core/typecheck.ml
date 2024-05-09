@@ -1,5 +1,9 @@
 (** Spartan type checking. *)
 
+open Util
+
+module DSyntax = Desugared.Syntax
+
 (** Type errors *)
 type type_error =
   | InvalidIndex of int
@@ -39,17 +43,17 @@ let print_error ~penv err ppf =
 let rec infer ctx {Location.data=e'; loc} =
   match e' with
 
-  | Syntax.Var k ->
+  | DSyntax.Var k ->
      begin
        match Context.lookup k ctx with
        | None -> error ~loc (InvalidIndex k)
        | Some (a, t) -> TT.Atom a, t
      end
 
-  | Syntax.Type ->
+  | DSyntax.Type ->
      TT.Type, TT.ty_Type
 
-  | Syntax.Prod ((x, t), u) ->
+  | DSyntax.Prod ((x, t), u) ->
      let t = check_ty ctx t in
      let x' = TT.new_atom x in
      let ctx = Context.extend_ident x' t ctx in
@@ -58,7 +62,7 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Prod ((x, t), u),
      TT.ty_Type
 
-  | Syntax.Lambda ((x, Some t), e) ->
+  | DSyntax.Lambda ((x, Some t), e) ->
      let t = check_ty ctx t in
      let x' = TT.new_atom x in
      let ctx  = Context.extend_ident x' t ctx in
@@ -68,21 +72,21 @@ let rec infer ctx {Location.data=e'; loc} =
      TT.Lambda ((x, t), e),
      TT.Ty (TT.Prod ((x, t), u))
 
-  | Syntax.Lambda ((x, None), _) ->
+  | DSyntax.Lambda ((x, None), _) ->
      error ~loc (CannotInferArgument x)
 
-  | Syntax.Apply (e1, e2) ->
+  | DSyntax.Apply (e1, e2) ->
      let e1, t1 = infer ctx e1 in
      begin
        match Equal.as_prod ctx t1 with
        | None -> error ~loc (FunctionExpected t1)
-       | Some ((x, t), u) ->
+       | Some ((_, t), u) ->
           let e2 = check ctx e2 t in
           TT.Apply (e1, e2),
           TT.instantiate_ty e2 u
      end
 
-  | Syntax.Ascribe (e, t) ->
+  | DSyntax.Ascribe (e, t) ->
      let t = check_ty ctx t in
      let e = check ctx e t in
      e, t
@@ -92,7 +96,7 @@ let rec infer ctx {Location.data=e'; loc} =
 and check ctx ({Location.data=e'; loc} as e) ty =
   match e' with
 
-  | Syntax.Lambda ((x, None), e) ->
+  | DSyntax.Lambda ((_, None), e) ->
      begin
        match Equal.as_prod ctx ty with
        | None -> error ~loc (TypeExpectedButFunction ty)
@@ -103,12 +107,12 @@ and check ctx ({Location.data=e'; loc} as e) ty =
           check ctx e u
      end
 
-  | Syntax.Lambda ((_, Some _), _)
-  | Syntax.Apply _
-  | Syntax.Prod _
-  | Syntax.Var _
-  | Syntax.Type
-  | Syntax.Ascribe _ ->
+  | DSyntax.Lambda ((_, Some _), _)
+  | DSyntax.Apply _
+  | DSyntax.Prod _
+  | DSyntax.Var _
+  | DSyntax.Type
+  | DSyntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
      then
@@ -123,16 +127,16 @@ and check_ty ctx t =
   let t = check ctx t TT.ty_Type in
   TT.Ty t
 
-let rec toplevel ~quiet ctx {Location.data=tc; loc} =
+let rec toplevel ~quiet ctx {Location.data=tc; _} =
   let ctx = toplevel' ~quiet ctx tc in
   ctx
 
 and toplevel' ~quiet ctx = function
 
-  | Syntax.TopLoad lst ->
+  | DSyntax.TopLoad lst ->
      topfile ~quiet ctx lst
 
-  | Syntax.TopDefinition (x, e) ->
+  | DSyntax.TopDefinition (x, e) ->
      let e, ty = infer ctx e in
      let x' = TT.new_atom x in
      let ctx = Context.extend_ident x' ty ctx in
@@ -140,14 +144,14 @@ and toplevel' ~quiet ctx = function
      if not quiet then Format.printf "%t is defined.@." (Name.print_ident x) ;
      ctx
 
-  | Syntax.TopCheck e ->
+  | DSyntax.TopCheck e ->
      let e, ty = infer ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
        (TT.print_expr ~penv:(Context.penv ctx) e)
        (TT.print_ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
-  | Syntax.TopEval e ->
+  | DSyntax.TopEval e ->
      let e, ty = infer ctx e in
      let e = Equal.norm_expr ~strategy:Equal.CBV ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
@@ -155,7 +159,7 @@ and toplevel' ~quiet ctx = function
        (TT.print_ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
-  | Syntax.TopAxiom (x, ty) ->
+  | DSyntax.TopAxiom (x, ty) ->
      let ty = check_ty ctx ty in
      let x' = TT.new_atom x in
      let ctx = Context.extend_ident x' ty ctx in

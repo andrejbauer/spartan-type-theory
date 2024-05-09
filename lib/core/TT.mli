@@ -1,5 +1,7 @@
 (** {1 Spartan type theory} *)
 
+open Util
+
 (** De Bruijn index *)
 type index
 

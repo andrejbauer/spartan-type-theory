@@ -19,7 +19,7 @@ let anonymous =
 let print_ident ?(parentheses=true) x ppf =
   match x with
   | Ident (s, Word) -> Format.fprintf ppf "%s" s
-  | Ident (_, Anonymous k) -> Format.fprintf ppf "_"
+  | Ident (_, Anonymous _k) -> Format.fprintf ppf "_"
   | Ident (s, (Prefix|Infix _)) ->
      if parentheses then
        Format.fprintf ppf "( %s )" s

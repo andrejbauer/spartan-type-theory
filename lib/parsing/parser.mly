@@ -1,11 +1,15 @@
 %{
+
+open Util
+
 %}
 
 (* Infix operations a la OCaml *)
-%token <Name.ident Location.located> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4
+
+%token <Util.Name.ident Util.Location.located> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4
 
 (* Names *)
-%token <Name.ident> NAME
+%token <Util.Name.ident> NAME
 %token UNDERSCORE
 
 (* Parentheses & punctuations *)
@@ -37,8 +41,8 @@
 %left     INFIXOP3
 %right    INFIXOP4
 
-%start <Input.toplevel list> file
-%start <Input.toplevel> commandline
+%start <Syntax.toplevel list> file
+%start <Syntax.toplevel> commandline
 
 %%
 
@@ -57,50 +61,50 @@ commandline:
 (* Things that can be defined on toplevel. *)
 topcomp: mark_location(plain_topcomp) { $1 }
 plain_topcomp:
-  | LOAD fn=QUOTED_STRING                { Input.TopLoad fn }
-  | DEFINITION x=var_name COLONEQ e=term { Input.TopDefinition (x, e) }
-  | CHECK e=term                         { Input.TopCheck e }
-  | EVAL e=term                          { Input.TopEval e }
-  | AXIOM x=var_name COLON e=term        { Input.TopAxiom (x, e) }
+  | LOAD fn=QUOTED_STRING                { Syntax.TopLoad fn }
+  | DEFINITION x=var_name COLONEQ e=term { Syntax.TopDefinition (x, e) }
+  | CHECK e=term                         { Syntax.TopCheck e }
+  | EVAL e=term                          { Syntax.TopEval e }
+  | AXIOM x=var_name COLON e=term        { Syntax.TopAxiom (x, e) }
 
 (* Main syntax tree *)
 term : mark_location(plain_term) { $1 }
 plain_term:
   | e=plain_infix_term                          { e }
-  | PROD a=prod_abstraction COMMA e=term        { Input.Prod (a, e) }
-  | e1=infix_term ARROW e2=term                 { Input.Arrow (e1, e2) }
-  | LAMBDA a=lambda_abstraction DARROW e=term   { Input.Lambda (a, e) }
-  | e=infix_term COLON t=term                   { Input.Ascribe (e, t) }
+  | PROD a=prod_abstraction COMMA e=term        { Syntax.Prod (a, e) }
+  | e1=infix_term ARROW e2=term                 { Syntax.Arrow (e1, e2) }
+  | LAMBDA a=lambda_abstraction DARROW e=term   { Syntax.Lambda (a, e) }
+  | e=infix_term COLON t=term                   { Syntax.Ascribe (e, t) }
 
 infix_term: mark_location(plain_infix_term) { $1 }
 plain_infix_term:
   | e=plain_app_term { e }
   | e2=infix_term oploc=infix e3=infix_term
     { let {Location.data=op; loc} = oploc in
-      let op = Location.locate ~loc (Input.Var op) in
-      let e1 = Location.locate ~loc (Input.Apply (op, e2)) in
-      Input.Apply (e1, e3)
+      let op = Location.locate ~loc (Syntax.Var op) in
+      let e1 = Location.locate ~loc (Syntax.Apply (op, e2)) in
+      Syntax.Apply (e1, e3)
     }
 
 app_term: mark_location(plain_app_term) { $1 }
 plain_app_term:
   | e=plain_prefix_term          { e }
-  | e1=app_term e2=prefix_term   { Input.Apply (e1, e2) }
+  | e1=app_term e2=prefix_term   { Syntax.Apply (e1, e2) }
 
 prefix_term: mark_location(plain_prefix_term) { $1 }
 plain_prefix_term:
   | e=plain_simple_term                       { e }
   | oploc=prefix e2=prefix_term
     { let {Location.data=op; loc} = oploc in
-      let op = Location.locate ~loc (Input.Var op) in
-      Input.Apply (op, e2)
+      let op = Location.locate ~loc (Syntax.Var op) in
+      Syntax.Apply (op, e2)
     }
 
 (* simple_term : mark_location(plain_simple_term) { $1 } *)
 plain_simple_term:
   | LPAREN e=plain_term RPAREN         { e }
-  | TYPE                               { Input.Type }
-  | x=var_name                         { Input.Var x }
+  | TYPE                               { Syntax.Type }
+  | x=var_name                         { Syntax.Var x }
 
 var_name:
   | NAME                     { $1 }

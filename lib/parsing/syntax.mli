@@ -1,5 +1,7 @@
 (** Concrete syntax as parsed by the parser. *)
 
+open Util
+
 (** Parsed expression. *)
 type expr = expr' Location.located
 and expr' =

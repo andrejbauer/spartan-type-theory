@@ -5,6 +5,10 @@
     the complex abstractions of [Input] to the simple ones of [Syntax].
 *)
 
+open Util
+
+module Input = Parsing.Syntax
+
 (** Desugaring errors *)
 type desugar_error =
   | UnknownIdentifier of Name.ident
@@ -142,10 +146,10 @@ and lambda_abstraction1 ctx xs t : context * (Name.ident * Syntax.ty option) lis
   fold ctx t [] xs
 
 
-(** Desugar a toplevel. *)
+(* Desugar a toplevel. *)
 let rec toplevel ctx {Location.data=c; Location.loc=loc} =
 
-(** Desugar a non-located toplevel. *)
+(* Desugar a non-located toplevel. *)
 let toplevel' ctx = function
 
     | Input.TopLoad fn ->
@@ -180,7 +184,7 @@ let toplevel' ctx = function
 
 (** Load a file and desugar it. *)
 and load ctx fn =
-  let cmds = Lexer.read_file Parser.file fn in
+  let cmds = Parsing.Lexer.read_file Parsing.Parser.file fn in
   let ctx, cmds = List.fold_left
                     (fun (ctx,cmds) cmd ->
                       let ctx, cmd = toplevel ctx cmd in

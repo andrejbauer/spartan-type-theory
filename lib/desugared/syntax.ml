@@ -1,5 +1,7 @@
 (** Abstract syntax of expressions, before they are type-checked. *)
 
+open Util
+
 (** De Bruijn index *)
 type index = int
 

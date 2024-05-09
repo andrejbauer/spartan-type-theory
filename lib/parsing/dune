@@ -1,0 +1,8 @@
+(library
+  (name parsing)
+  (libraries sedlex menhirLib util)
+  (preprocess (pps sedlex.ppx))
+  (modules_without_implementation syntax))
+
+(menhir
+  (modules parser))

@@ -14,7 +14,7 @@ val extend_ident : TT.atom -> TT.ty -> context -> context
 val extend_def : TT.atom -> TT.expr -> context -> context
 
 (** The list of names which should not be used for printing bound variables. *)
-val penv : context -> Name.ident list
+val penv : context -> Util.Name.ident list
 
 (** Lookup the type and value of the given de Bruijn index. *)
 val lookup : int -> context -> entry option

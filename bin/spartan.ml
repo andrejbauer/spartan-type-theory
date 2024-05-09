@@ -1,5 +1,7 @@
 (** Command-line processing and the main program. *)
 
+open Util
+
 (** The usage message. *)
 let usage = "Usage: spartan [option] ... [file] ..."
 
@@ -58,18 +60,18 @@ let interactive_shell state =
   let rec loop state =
     let state =
       try
-        Toplevel.exec_interactive state
+        Core.Toplevel.exec_interactive state
       with
-      | Ulexbuf.Error {Location.data=err; Location.loc} ->
-         Print.error "Lexical error at %t:@ %t" (Location.print loc) (Ulexbuf.print_error err) ;
+      | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
+         Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err) ;
          state
-      | Desugar.Error {Location.data=err; Location.loc} ->
-         Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugar.print_error err) ;
+      | Desugared.Desugar.Error {Location.data=err; Location.loc} ->
+         Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugared.Desugar.print_error err) ;
          state
-      | Typecheck.Error {Location.data=err; Location.loc} ->
+      | Core.Typecheck.Error {Location.data=err; Location.loc} ->
          Print.error "Typechecking error at %t:@ %t"
            (Location.print loc)
-           (Typecheck.print_error ~penv:(Toplevel.penv state) err) ;
+           (Core.Typecheck.print_error ~penv:(Core.Toplevel.penv state) err) ;
          state
       | Sys.Break ->
          Print.error "Interrupted." ;
@@ -135,18 +137,18 @@ let _main =
            else ()
 
         | (fn, quiet) :: files ->
-           let topstate = Toplevel.load_file ~quiet topstate fn in
+           let topstate = Core.Toplevel.load_file ~quiet topstate fn in
            run_code topstate files
       end
     with
-    | Ulexbuf.Error {Location.data=err; Location.loc} ->
-       Print.error "Lexical error at %t:@ %t" (Location.print loc) (Ulexbuf.print_error err)
-    | Desugar.Error {Location.data=err; Location.loc} ->
-       Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugar.print_error err)
-    | Typecheck.Error {Location.data=err; Location.loc} ->
+    | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
+       Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err)
+    | Desugared.Desugar.Error {Location.data=err; Location.loc} ->
+       Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugared.Desugar.print_error err)
+    | Core.Typecheck.Error {Location.data=err; Location.loc} ->
        Print.error "Typechecking error at %t:@ %t"
          (Location.print loc)
-         (Typecheck.print_error ~penv:(Toplevel.penv topstate) err)
+         (Core.Typecheck.print_error ~penv:(Core.Toplevel.penv topstate) err)
   in
 
-  run_code Toplevel.initial !files
+  run_code Core.Toplevel.initial !files

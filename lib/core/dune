@@ -1,0 +1,3 @@
+(library
+  (name core)
+  (libraries util desugared))

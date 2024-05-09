@@ -1,0 +1,6 @@
+(executable
+  (name "spartan")
+  (public_name "spartan")
+  (modules spartan)
+  (promote (until-clean) (into ..))
+  (libraries parsing desugared core unix))

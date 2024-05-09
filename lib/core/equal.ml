@@ -8,7 +8,7 @@ type strategy =
 (** Normalize an expression. *)
 let rec norm_expr ~strategy ctx e =
   match e with
-  | TT.Bound k -> assert false
+  | TT.Bound _ -> assert false
 
   | TT.Type -> e
 
@@ -90,7 +90,7 @@ and expr_whnf ctx e1 e2 =
 
   | TT.Type, TT.Type -> true
 
-  | TT.Bound k1, TT.Bound k2 ->
+  | TT.Bound _k1, TT.Bound _k2 ->
     (* We should never be in a situation where we compare bound variables,
        as that would mean that we forgot to unabstract a lambda or a product. *)
     assert false
@@ -107,7 +107,7 @@ and expr_whnf ctx e1 e2 =
       ty ctx u1 u2
     end
 
-  | TT.Lambda ((x, t1), e1), TT.Lambda ((_, t2), e2)  ->
+  | TT.Lambda _, TT.Lambda _  ->
     (* We should never have to compare two lambdas, as that would mean that the
        type-directed phase did not figure out that these have product types. *)
     assert false
@@ -146,7 +146,7 @@ and spine ctx (a1, sp1) (a2, sp2) =
     let rec fold ty sp1 sp2 =
       match as_prod ctx ty with
       | None -> assert false
-      | Some ((x, t), u) ->
+      | Some ((_, t), u) ->
         begin
           match sp1, sp2 with
           | [e1], [e2] -> expr ctx e1 e2 t
