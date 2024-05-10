@@ -9,7 +9,7 @@ open Util
 %token <string Util.Location.t> PREFIXOP INFIXOP0 INFIXOP1 INFIXOP2 INFIXOP3 INFIXOP4
 
 (* Names *)
-%token <Util.Name.ident> NAME
+%token <string> NAME
 %token UNDERSCORE
 
 (* Parentheses & punctuations *)
@@ -110,7 +110,7 @@ var_name:
   | NAME                     { $1 }
   | LPAREN op=infix RPAREN   { op.Location.data }
   | LPAREN op=prefix RPAREN  { op.Location.data }
-  | UNDERSCORE               { Name.anonymous () }
+  | UNDERSCORE               { Name.anonymous }
 
 %inline infix:
   | op=INFIXOP0    { op }

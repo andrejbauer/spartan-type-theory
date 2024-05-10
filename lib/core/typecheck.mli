@@ -5,10 +5,10 @@ type type_error
 exception Error of type_error Util.Location.t
 
 (** Print error description. *)
-val print_error : penv:Util.Name.ident list -> type_error -> Format.formatter -> unit
+val print_error : penv:Bindlib.ctxt -> type_error -> Format.formatter -> unit
 
 (** Type-check a top-level command. *)
-val toplevel : quiet:bool -> Context.context -> Desugared.Syntax.toplevel -> Context.context
+val toplevel : quiet:bool -> Context.context -> Parsing.Syntax.toplevel -> Context.context
 
 (** Type-check the contents of a file. *)
-val topfile : quiet:bool -> Context.context -> Desugared.Syntax.toplevel list -> Context.context
+val topfile : quiet:bool -> Context.context -> Parsing.Syntax.toplevel list -> Context.context

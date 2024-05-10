@@ -11,4 +11,4 @@ val exec_interactive : state -> state
 val load_file : quiet:bool -> state -> string -> state
 
 (** Names of bound variables, used for printing de Bruijn indices. *)
-val penv : state -> Util.Name.ident list
+val penv : state -> Bindlib.ctxt

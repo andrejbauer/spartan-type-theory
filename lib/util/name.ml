@@ -19,6 +19,8 @@ let fixity x =
     | '*' | '/' | '%' -> Infix Level.Infix3
     | _ -> Word
 
+let anonymous = "_"
+
 let print_var ?(parentheses=true) x ppf =
   let s = Bindlib.name_of x in
   match fixity x with

@@ -88,31 +88,25 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
 
   (* We record the location of operators here because menhir cannot handle %infix and
      mark_location simultaneously, it seems. *)
-  | prefixop                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Prefix) in
-                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+  | prefixop                 -> f (); let op = Location.locate ~loc:(loc_of lexbuf) (Ulexbuf.lexeme lexbuf) in
                                       Parser.PREFIXOP op
-  | infixop0                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix0) in
-                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+  | infixop0                 -> f (); let op = Location.locate ~loc:(loc_of lexbuf) (Ulexbuf.lexeme lexbuf) in
                                       Parser.INFIXOP0 op
-  | infixop1                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix1) in
-                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+  | infixop1                 -> f (); let op = Location.locate ~loc:(loc_of lexbuf) (Ulexbuf.lexeme lexbuf) in
                                       Parser.INFIXOP1 op
-  | infixop2                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix2) in
-                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+  | infixop2                 -> f (); let op = Location.locate ~loc:(loc_of lexbuf) (Ulexbuf.lexeme lexbuf) in
                                       Parser.INFIXOP2 op
   (* Comes before infixop3 because ** matches the infixop3 pattern too *)
-  | infixop4                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix4) in
-                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+  | infixop4                 -> f (); let op = Location.locate ~loc:(loc_of lexbuf) (Ulexbuf.lexeme lexbuf) in
                                       Parser.INFIXOP4 op
-  | infixop3                 -> f (); let op = Name.Ident (Ulexbuf.lexeme lexbuf, Name.Infix Level.Infix3) in
-                                      let op = Location.locate ~loc:(loc_of lexbuf) op in
+  | infixop3                 -> f (); let op = Location.locate ~loc:(loc_of lexbuf) (Ulexbuf.lexeme lexbuf) in
                                       Parser.INFIXOP3 op
 
   | eof                      -> f (); Parser.EOF
   | name                     -> f ();
     let n = Ulexbuf.lexeme lexbuf in
     begin try List.assoc n reserved
-    with Not_found -> Parser.NAME (Name.Ident (n, Name.Word))
+    with Not_found -> Parser.NAME n
     end
 (*
   | numeral                  -> f (); let k = safe_int_of_string lexbuf in NUMERAL k
