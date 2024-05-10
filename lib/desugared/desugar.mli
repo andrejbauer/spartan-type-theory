@@ -9,7 +9,7 @@ type context
 val initial : context
 
 (** The exception signalling a desugaring error*)
-exception Error of desugar_error Util.Location.located
+exception Error of desugar_error Util.Location.t
 
 (** Print desugaring error. *)
 val print_error : desugar_error -> Format.formatter -> unit

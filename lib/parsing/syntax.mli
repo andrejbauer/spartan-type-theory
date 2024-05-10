@@ -2,8 +2,8 @@
 
 open Util
 
-(** Parsed tmession. *)
-type tm = tm' Location.located
+(** Parsed term. *)
+type tm = tm' Location.t
 and tm' =
   | Var of string
   | Type
@@ -17,7 +17,7 @@ and tm' =
 and ty = tm
 
 (** Parsed top-level command. *)
-type toplevel = toplevel' Location.located
+type toplevel = toplevel' Location.t
 and toplevel' =
   | TopLoad of string
   | TopDefinition of string * tm

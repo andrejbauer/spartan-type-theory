@@ -1,22 +1,22 @@
 (** Source code locations. *)
-type t =
+type location =
   | Location of Lexing.position * Lexing.position (** delimited location *)
   | Nowhere (** no location *)
 
 (** A datum tagged with a source code location *)
-type 'a located = private { data : 'a ; loc : t }
+type 'a t = private { data : 'a ; loc : location }
 
 (** Tag a datum with an (optional) location. *)
-val locate : ?loc:t -> 'a -> 'a located
+val locate : ?loc:location -> 'a -> 'a t
 
 (** An unknown location, use with care. *)
-val nowhere : t
+val nowhere : location
 
 (** Convert a [Lexing.lexbuf] location to a [location] *)
-val of_lex : Lexing.lexbuf -> t
+val of_lex : Lexing.lexbuf -> location
 
 (** [make p1 p2] creates a location which starts at [p1] and ends at [p2]. *)
-val make : Lexing.position -> Lexing.position -> t
+val make : Lexing.position -> Lexing.position -> location
 
 (** Print a location *)
-val print : t -> Format.formatter -> unit
+val print : location -> Format.formatter -> unit

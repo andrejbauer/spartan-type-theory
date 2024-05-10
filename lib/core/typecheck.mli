@@ -2,7 +2,7 @@
 type type_error
 
 (** Exception signalling a type error. *)
-exception Error of type_error Util.Location.located
+exception Error of type_error Util.Location.t
 
 (** Print error description. *)
 val print_error : penv:Util.Name.ident list -> type_error -> Format.formatter -> unit

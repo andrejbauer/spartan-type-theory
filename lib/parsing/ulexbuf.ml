@@ -20,7 +20,7 @@ let print_error err ppf = match err with
   | BadNumeral s -> Format.fprintf ppf "Bad numeral %s" s
   | UnclosedComment -> Format.fprintf ppf "Input ended inside unclosed comment"
 
-exception Error of error Util.Location.located
+exception Error of error Util.Location.t
 
 let error ~loc err = Stdlib.raise (Error (Util.Location.locate ~loc err))
 
