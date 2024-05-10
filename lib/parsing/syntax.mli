@@ -2,25 +2,25 @@
 
 open Util
 
-(** Parsed expression. *)
-type expr = expr' Location.located
-and expr' =
-  | Var of Name.ident
+(** Parsed tmession. *)
+type tm = tm' Location.located
+and tm' =
+  | Var of string
   | Type
-  | Prod of (Name.ident list * ty) list * ty
-  | Lambda of (Name.ident list * ty option) list * ty
-  | Apply of expr * expr
-  | Arrow of expr * expr
-  | Ascribe of expr * ty
+  | Prod of (string list * ty) list * ty
+  | Lambda of (string list * ty option) list * ty
+  | Apply of tm * tm
+  | Arrow of tm * tm
+  | Ascribe of tm * ty
 
-(** Parsed type (equal to expression). *)
-and ty = expr
+(** Parsed type (equal to tmession). *)
+and ty = tm
 
 (** Parsed top-level command. *)
 type toplevel = toplevel' Location.located
 and toplevel' =
   | TopLoad of string
-  | TopDefinition of Name.ident * expr
-  | TopCheck of expr
-  | TopEval of expr
-  | TopAxiom of Name.ident * expr
+  | TopDefinition of string * tm
+  | TopCheck of tm
+  | TopEval of tm
+  | TopAxiom of string * tm

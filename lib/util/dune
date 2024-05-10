@@ -1,4 +1,4 @@
 (library
   (name util)
-  (libraries))
+  (libraries bindlib))
 

@@ -27,9 +27,9 @@ Top-level commands:
 
 * [OCaml](https://ocaml.org) and [OPAM](https://opam.ocaml.org)
 
-* The OPAM packages `dune`, `menhir`, `mehirLib` and `sedlex`:
+* The OPAM packages `dune`, `menhir`, `mehirLib`, `sedlex` and `bindlib`:
 
-        opam install dune menhir menihirLib sedlex
+        opam install dune menhir menihirLib sedlex bindlib
 
 * It is recommended that you also install the `rlwrap` or `ledit` command line wrapper.
 
