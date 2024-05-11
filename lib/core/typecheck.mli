@@ -8,7 +8,7 @@ exception Error of type_error Util.Location.t
 val print_error : penv:Bindlib.ctxt -> type_error -> Format.formatter -> unit
 
 (** Type-check a top-level command. *)
-val toplevel : quiet:bool -> Context.context -> Parsing.Syntax.toplevel -> Context.context
+val toplevel : quiet:bool -> Context.t -> Parsing.Syntax.toplevel -> Context.t
 
 (** Type-check the contents of a file. *)
-val topfile : quiet:bool -> Context.context -> Parsing.Syntax.toplevel list -> Context.context
+val topfile : quiet:bool -> Context.t -> Parsing.Syntax.toplevel list -> Context.t

@@ -2,23 +2,59 @@
 
 open Util
 
-(** Expression *)
+(* Terms *)
 type tm =
-  | Var of var
-  | Type (** the type of types *)
-  | Prod of ty * ty binder (** dependent product *)
-  | Lambda of ty * tm binder (** lambda abstraction *)
-  | Apply of tm * tm (** application *)
+  | Var of var (* variable *)
+  | Type (* the type of types qua term *)
+  | Prod of ty * ty binder (* dependent product *)
+  | Lambda of ty * tm binder (* function *)
+  | Apply of tm * tm (* application *)
 
-(** Type *)
+(* Types *)
 and ty = Ty of tm
 
 and var = tm Bindlib.var
 
 and 'a binder = (tm, 'a) Bindlib.binder
 
-(** Print a TT expression *)
+type tm_ = tm Bindlib.box
+
+type ty_ = ty Bindlib.box
+
+type 'a binder_ = 'a binder Bindlib.box
+
+(* Boxed constructors *)
+
+val var_ : var -> tm_
+
+val type_ : tm_
+
+val ty_type_ : ty_
+
+val prod_ : ty_ -> ty binder_ -> tm_
+
+val ty_prod_ : ty_ -> ty binder_ -> ty_
+
+val lambda_ : ty_ -> tm binder_ -> tm_
+
+val apply_ : tm_ -> tm_ -> tm_
+
+(* Lifting functions *)
+
+val lift_tm : tm -> tm_
+
+val lift_ty : ty -> ty_
+
+val fresh_var : string -> var
+
+val bind_var : var -> 'a Bindlib.box -> 'a binder_
+
+val unbox : 'a Bindlib.box -> 'a
+
+val unbind : 'a binder -> var * 'a
+
+(* Print a term *)
 val print_tm : ?max_level:Level.t -> penv:Bindlib.ctxt -> tm -> Format.formatter -> unit
 
-(** Print a TT type *)
+(* Print a type *)
 val print_ty : ?max_level:Level.t -> penv:Bindlib.ctxt -> ty -> Format.formatter -> unit

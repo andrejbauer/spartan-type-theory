@@ -26,11 +26,7 @@ type tm_ = tm Bindlib.box
 (** A boxed type *)
 type ty_ = ty Bindlib.box
 
-let bind_var (x : var) e = Bindlib.bind_var x e
-
 let box_binder = Bindlib.box_binder
-
-let unbox = Bindlib.unbox
 
 (* Constructors for boxed terms and types *)
 
@@ -38,7 +34,11 @@ let var_ = Bindlib.box_var
 
 let type_ = Bindlib.box Type
 
+let ty_type_ = Bindlib.box (Ty Type)
+
 let prod_ = Bindlib.box_apply2 (fun t u -> Prod (t, u))
+
+let ty_prod_ = Bindlib.box_apply2 (fun t u -> Ty (Prod (t, u)))
 
 let lambda_ = Bindlib.box_apply2 (fun t e -> Lambda (t, e))
 
@@ -67,19 +67,27 @@ and lift_ty (Ty ty) =
 
 (* Helper functions for printing quantifiers *)
 
-let unbind = Bindlib.unbind_in
+let unbox = Bindlib.unbox
+
+let bind_var = Bindlib.bind_var
+
+let unbind = Bindlib.unbind
+
+let unbind_in = Bindlib.unbind_in
 
 let as_prod ~penv = function
   | (Ty (Prod (u, t))) when Bindlib.binder_occur t ->
-     let (x, t, penv) = unbind penv t in
+     let (x, t, penv) = unbind_in penv t in
      Some (x, u, t, penv)
   | _ -> None
 
 let as_lambda ~penv = function
   | Lambda (t, e) ->
-     let (x, e, penv) = unbind penv e in
+     let (x, e, penv) = unbind_in penv e in
      Some (x, t, e, penv)
   | _ -> None
+
+let fresh_var x = Bindlib.new_var (fun x -> Var x) x
 
 (* Printing routines *)
 
@@ -126,7 +134,7 @@ and print_quantifier :
   in
   let printer ppf =
     Format.pp_open_hovbox ppf 2 ;
-    let (x, v, penv') = unbind penv v in
+    let (x, v, penv') = unbind_in penv v in
     Format.fprintf ppf "%s@;<1 -4>(%s : %t)" quant (Bindlib.name_of x) (print_ty ~penv u) ;
     print_rest ~penv:penv' v ;
     Format.pp_close_box ppf ()

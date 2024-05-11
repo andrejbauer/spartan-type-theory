@@ -1,14 +1,45 @@
-(** A typing context is a list of known identifiers and definitional equalities. *)
-type context
+type t
 
-(** The initial, empty typing context. *)
-val initial : context
+(* The monad for computing in a typing context *)
+type 'a m
 
-(** Extend the context with a variable. *)
-val extend_var : TT.var -> TT.ty -> ?def:TT.tm -> context -> context
+(* Monadic interface to contexts. *)
+module Monad : sig
 
-(** The list of names which should not be used for printing bound variables. *)
-val penv : context -> Bindlib.ctxt
+  (* Thread context state through a computation *)
+  val ( let* ) : 'b m -> ('b -> 'c m) -> 'c m
 
-(** Lookup the type and value of the given de Bruijn index. *)
-val lookup : TT.var -> context -> TT.ty * TT.tm option
+  (* Synonym for [let*] *)
+  val ( >>= ) : 'b m -> ('b -> 'c m) -> 'c m
+
+  (* Return a pure value *)
+  val return : 'b -> 'b m
+end
+
+(* The initial, empty typing context. *)
+val initial : t
+
+(* Extend the context with a variable and return it *)
+val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t
+
+(* The list of identifiers which should not be used for printing bound variables. *)
+val penv : t -> Bindlib.ctxt
+
+(* Lookup the type and value of the given variable *)
+val lookup_var : TT.var -> (TT.tm option * TT.ty) m
+
+(* Lookup the information associated with a variable *)
+val lookup_var_ : TT.var -> (TT.tm_ option * TT.ty_) m
+
+val lookup_ident : string -> TT.var option m
+
+(** Run a computation in a context extended with a variable, passing it the newly
+    created variable. It is the callers responsibility that the result be valid in
+    the original context. *)
+(* val with_var_ : string -> TT.ty_ -> ?def:TT.tm_ -> (TT.var -> 'a m) -> 'a m *)
+
+val with_ident : string -> ?def:TT.tm -> TT.ty -> (TT.var -> 'a m) -> 'a m
+
+val with_ident_ : string -> ?def:TT.tm_ -> TT.ty_ -> (TT.var -> 'a m) -> 'a m
+
+val with_var : TT.var -> ?def:TT.tm -> TT.ty -> 'a m -> 'a m

@@ -2,15 +2,15 @@
 
 open Util
 
-module DSyntax = Desugared.Syntax
+module ISyntax = Parsing.Syntax
 
 (** Type errors *)
 type type_error =
-  | InvalidIndex of int
+  | UnknownIdent of string
   | TypeExpected of TT.ty * TT.ty
   | TypeExpectedButFunction of TT.ty
   | FunctionExpected of TT.ty
-  | CannotInferArgument of Name.ident
+  | CannotInferArgument of string
 
 exception Error of type_error Location.t
 
@@ -20,7 +20,7 @@ let error ~loc err = Stdlib.raise (Error (Location.locate ~loc err))
 let print_error ~penv err ppf =
   match err with
 
-  | InvalidIndex k -> Format.fprintf ppf "invalid de Bruijn index %d, please report" k
+  | UnknownIdent x -> Format.fprintf ppf "unknown identifier %s" x
 
   | TypeExpected (ty_expected, ty_actual) ->
      Format.fprintf ppf "this expression should have type %t but has type %t"
@@ -36,67 +36,67 @@ let print_error ~penv err ppf =
                         (TT.print_ty ~penv ty)
 
   | CannotInferArgument x ->
-     Format.fprintf ppf "cannot infer the type of %t" (Name.print_ident x)
+     Format.fprintf ppf "cannot infer the type of %s" x
 
-(** [infer ctx e] infers the type [ty] of expression [e]. It returns
+
+open Context.Monad
+
+(** [infer e] infers the type [ty] of expression [e]. It returns
     the processed expression [e] and its type [ty].  *)
-let rec infer ctx {Location.data=e'; loc} =
+let rec infer {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
   match e' with
 
-  | DSyntax.Var k ->
+  | ISyntax.Var x ->
      begin
-       match Context.lookup k ctx with
-       | None -> error ~loc (InvalidIndex k)
-       | Some (a, t) -> TT.Atom a, t
+       Context.lookup_ident x >>= function
+       | None -> error ~loc (UnknownIdent x)
+       | Some v ->
+          let* (_, t) = Context.lookup_var_ v in
+          return (TT.var_ v, t)
      end
 
-  | DSyntax.Type ->
-     TT.Type, TT.ty_Type
+  | ISyntax.Type ->
+     return TT.(type_, ty_type_)
 
-  | DSyntax.Prod ((x, t), u) ->
-     let t = check_ty ctx t in
-     let x' = TT.new_atom x in
-     let ctx = Context.extend_ident x' t ctx in
-     let u = check_ty ctx u in
-     let u = TT.abstract_ty x' u in
-     TT.Prod ((x, t), u),
-     TT.ty_Type
+  | ISyntax.Prod ((x, u), t) ->
+     let* u = check_ty u in
+     Context.with_ident_ x u
+       (fun v ->
+         let* t = check_ty t in
+         return TT.(prod_ u (bind_var v t), ty_type_))
 
-  | DSyntax.Lambda ((x, Some t), e) ->
-     let t = check_ty ctx t in
-     let x' = TT.new_atom x in
-     let ctx  = Context.extend_ident x' t ctx in
-     let e, u = infer ctx e in
-     let e = TT.abstract x' e in
-     let u = TT.abstract_ty x' u in
-     TT.Lambda ((x, t), e),
-     TT.Ty (TT.Prod ((x, t), u))
+  | ISyntax.Lambda ((x, Some u), e) ->
+     let* u = check_ty u in
+     Context.with_ident_ x u
+       (fun v ->
+         let* (e, t) = infer e in
+         return TT.(lambda_ u (bind_var v e), ty_prod_ u (bind_var v t)))
 
-  | DSyntax.Lambda ((x, None), _) ->
+  | ISyntax.Lambda ((x, None), _) ->
      error ~loc (CannotInferArgument x)
 
-  | DSyntax.Apply (e1, e2) ->
-     let e1, t1 = infer ctx e1 in
+  | ISyntax.Apply (e1, e2) ->
+     let* (e1, t1_) = infer e1 in
      begin
-       match Equal.as_prod ctx t1 with
-       | None -> error ~loc (FunctionExpected t1)
-       | Some ((_, t), u) ->
-          let e2 = check ctx e2 t in
+       Equal.as_prod_ t1 >>= function
+       | None -> error ~loc (FunctionExpected (TT.unbox t1))
+       | Some (u, t) ->
+          let* e2 = check e2 u in
           TT.Apply (e1, e2),
           TT.instantiate_ty e2 u
      end
 
-  | DSyntax.Ascribe (e, t) ->
-     let t = check_ty ctx t in
-     let e = check ctx e t in
+  | ISyntax.Ascribe (e, t) ->
+     let* t = check_ty t in
+     let* e = check e t in
      e, t
 
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
-and check ctx ({Location.data=e'; loc} as e) ty =
+and check ({Location.data=e'; loc} as e) (ty : TT.ty_) : TT.tm_ Context.m =
   match e' with
 
-  | DSyntax.Lambda ((_, None), e) ->
+  | ISyntax.Lambda ((_, None), e) ->
      begin
        match Equal.as_prod ctx ty with
        | None -> error ~loc (TypeExpectedButFunction ty)
@@ -107,12 +107,12 @@ and check ctx ({Location.data=e'; loc} as e) ty =
           check ctx e u
      end
 
-  | DSyntax.Lambda ((_, Some _), _)
-  | DSyntax.Apply _
-  | DSyntax.Prod _
-  | DSyntax.Var _
-  | DSyntax.Type
-  | DSyntax.Ascribe _ ->
+  | ISyntax.Lambda ((_, Some _), _)
+  | ISyntax.Apply _
+  | ISyntax.Prod _
+  | ISyntax.Var _
+  | ISyntax.Type
+  | ISyntax.Ascribe _ ->
      let e, ty' = infer ctx e in
      if Equal.ty ctx ty ty'
      then
@@ -123,9 +123,9 @@ and check ctx ({Location.data=e'; loc} as e) ty =
 
 (** [check_ty ctx t] checks that [t] is a type in context [ctx]. It returns the processed
    type [t]. *)
-and check_ty ctx t =
-  let t = check ctx t TT.ty_Type in
-  TT.Ty t
+and check_ty t =
+  let* t = check t TT.ty_type_ in
+  return (TT.ty_ t)
 
 let rec toplevel ~quiet ctx {Location.data=tc; _} =
   let ctx = toplevel' ~quiet ctx tc in
@@ -133,10 +133,10 @@ let rec toplevel ~quiet ctx {Location.data=tc; _} =
 
 and toplevel' ~quiet ctx = function
 
-  | DSyntax.TopLoad lst ->
+  | ISyntax.TopLoad lst ->
      topfile ~quiet ctx lst
 
-  | DSyntax.TopDefinition (x, e) ->
+  | ISyntax.TopDefinition (x, e) ->
      let e, ty = infer ctx e in
      let x' = TT.new_atom x in
      let ctx = Context.extend_ident x' ty ctx in
@@ -144,14 +144,14 @@ and toplevel' ~quiet ctx = function
      if not quiet then Format.printf "%t is defined.@." (Name.print_ident x) ;
      ctx
 
-  | DSyntax.TopCheck e ->
+  | ISyntax.TopCheck e ->
      let e, ty = infer ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
        (TT.print_expr ~penv:(Context.penv ctx) e)
        (TT.print_ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
-  | DSyntax.TopEval e ->
+  | ISyntax.TopEval e ->
      let e, ty = infer ctx e in
      let e = Equal.norm_expr ~strategy:Equal.CBV ctx e in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
@@ -159,7 +159,7 @@ and toplevel' ~quiet ctx = function
        (TT.print_ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
-  | DSyntax.TopAxiom (x, ty) ->
+  | ISyntax.TopAxiom (x, ty) ->
      let ty = check_ty ctx ty in
      let x' = TT.new_atom x in
      let ctx = Context.extend_ident x' ty ctx in

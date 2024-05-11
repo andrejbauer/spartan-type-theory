@@ -1,22 +1,22 @@
-(** Concrete syntax as parsed by the parser. *)
+(* Concrete syntax as parsed by the parser. *)
 
 open Util
 
-(** Parsed term. *)
+(* Parsed term. *)
 type tm = tm' Location.t
 and tm' =
   | Var of string
   | Type
-  | Prod of (string list * ty) list * ty
-  | Lambda of (string list * ty option) list * ty
+  | Prod of (string * ty) * ty
+  | Lambda of (string * ty option) * ty
   | Apply of tm * tm
   | Arrow of tm * tm
   | Ascribe of tm * ty
 
-(** Parsed type (equal to tmession). *)
+(* Parsed type (equal to tmession). *)
 and ty = tm
 
-(** Parsed top-level command. *)
+(* Parsed top-level command. *)
 type toplevel = toplevel' Location.t
 and toplevel' =
   | TopLoad of string
@@ -24,3 +24,7 @@ and toplevel' =
   | TopCheck of tm
   | TopEval of tm
   | TopAxiom of string * tm
+
+val prod : (string list * ty) Location.t list -> ty -> tm'
+
+val lambda : (string list * ty option) Location.t list -> tm -> tm'

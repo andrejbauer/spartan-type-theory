@@ -3,7 +3,7 @@
 type state =
   {
     desugar : Desugared.Desugar.context; (** The desugaring state *)
-    typecheck : Context.context; (** The typechecking state *)
+    typecheck : Context.t; (** The typechecking state *)
   }
 
 let initial = {

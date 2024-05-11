@@ -5,106 +5,115 @@ type strategy =
   | WHNF (** normalize to weak head-normal form *)
   | CBV (** call-by-value normalization *)
 
+open Context.Monad
+
+(* Monadic conjunction *)
+let ( &&& ) c1 c2 =
+  let* b = c1 in
+  if b then c2 else return false
+
+(* Monadic disjunction *)
+let ( ||| ) c1 c2 =
+  let* b = c1 in
+  if b then return true else c2
+
 (** Normalize an expression. *)
-let rec norm_expr ~strategy ctx e =
+let rec norm_tm ~strategy e =
   match e with
-  | TT.Bound _ -> assert false
 
-  | TT.Type -> e
+  | TT.Type ->
+     return e
 
-  | TT.Atom x ->
+  | TT.Var x ->
     begin
-      match Context.lookup_def x ctx with
-      | None -> e
-      | Some e -> norm_expr ~strategy ctx e
+      Context.lookup_var x >>= function
+      | (None, _) -> return e
+      | (Some e, _) -> norm_tm ~strategy e
     end
 
-  | TT.Prod _ -> e
+  | TT.Prod _ ->
+     return e
 
-  | TT.Lambda _ -> e
+  | TT.Lambda _ ->
+     return e
 
   | TT.Apply (e1, e2) ->
-    let e1 = norm_expr ~strategy ctx e1
-    and e2 =
+    let* e1 = norm_tm ~strategy e1 in
+    let* e2 =
       begin
         match strategy with
-        | WHNF -> e2
-        | CBV -> norm_expr ~strategy ctx e2
+        | WHNF -> return e2
+        | CBV -> norm_tm ~strategy e2
       end
     in
     begin
       match e1 with
       | TT.Lambda (_, e') ->
-        let e' = TT.instantiate e2 e' in
-        norm_expr ~strategy ctx e'
-      | _ -> TT.Apply (e1, e2)
+        norm_tm ~strategy (Bindlib.subst e' e2)
+      | _ ->
+         return @@ TT.Apply (e1, e2)
     end
 
 (** Normalize a type *)
-let norm_ty ~strategy ctx (TT.Ty ty) =
-  let ty = norm_expr ~strategy ctx ty in
-  TT.Ty ty
+let norm_ty ~strategy (TT.Ty ty) =
+  let* ty = norm_tm ~strategy ty in
+  return @@ TT.Ty ty
 
 (** Normalize a type to a product. *)
-let as_prod ctx t =
-  let TT.Ty t' = norm_ty ~strategy:WHNF ctx t in
+let as_prod t =
+  let* TT.Ty t' = norm_ty ~strategy:WHNF t in
   match t' with
-  | TT.Prod ((x, t), u) -> Some ((x, t), u)
-  | _ -> None
+  | TT.Prod (t, u) -> return @@ Some (t, u)
+  | _ -> return None
+
+
+let as_prod (t_ : TT.ty_) =
+  let t = TT.unbox t_ in
+  let* TT.Ty t' = norm_ty ~strategy:WHNF t in
+  match t' with
+  | TT.Prod (t, u) -> return @@ Some TT.(lift_ty t, Bindlib.apply_binder lift_ty u)
+  | _ -> return None
 
 (** Compare expressions [e1] and [e2] at type [ty]? *)
-let rec expr ctx e1 e2 ty =
+let rec equal_tm_at e1 e2 ty =
   (* short-circuit *)
-  (e1 == e2) ||
+  return (e1 == e2) |||
   begin
     (* The type directed phase *)
-    let TT.Ty ty' = norm_ty ~strategy:WHNF ctx ty in
+    let* TT.Ty ty' = norm_ty ~strategy:WHNF ty in
     match  ty' with
 
-    | TT.Prod ((x, t), u) ->
-      (* Apply function extensionality. *)
-      let x' = TT.new_atom x in
-      let ctx = Context.extend_ident x' t ctx
-      and e1 = TT.Apply (e1, TT.Atom x')
-      and e2 = TT.Apply (e2, TT.Atom x')
-      and u = TT.unabstract_ty x' u in
-      expr ctx e1 e2 u
+    | TT.Prod (t, u) ->
+       (* Apply function extensionality. *)
+       let (x, u) = TT.unbind u in
+       Context.with_var x t
+         (let e1 = TT.(Apply (e1, Var x))
+          and e2 = TT.(Apply (e2, Var x)) in
+          equal_tm_at e1 e2 u)
 
-    | TT.Type
-    | TT.Apply _
-    | TT.Bound _
-    | TT.Atom _ ->
-      (* Type-directed phase is done, we compare normal forms. *)
-      let e1 = norm_expr ~strategy:WHNF ctx e1
-      and e2 = norm_expr ~strategy:WHNF ctx e2 in
-      expr_whnf ctx e1 e2
+    | TT.(Var _ | Type | Apply _) ->
+       (* Type-directed phase is done, we compare normal forms. *)
+       equal_tm e1 e2
 
     | TT.Lambda _ ->
       (* A type should never normalize to an abstraction *)
       assert false
   end
 
-(** Structurally compare weak head-normal expressions [e1] and [e2]. *)
-and expr_whnf ctx e1 e2 =
+(** Structurally compare weak head-normal forms of terms [e1] and [e2]. *)
+and equal_tm e1 e2 =
+  let* e1 = norm_tm ~strategy:WHNF e1 in
+  let* e2 = norm_tm ~strategy:WHNF e2 in
   match e1, e2 with
 
-  | TT.Type, TT.Type -> true
+  | TT.Type, TT.Type ->
+     return true
 
-  | TT.Bound _k1, TT.Bound _k2 ->
-    (* We should never be in a situation where we compare bound variables,
-       as that would mean that we forgot to unabstract a lambda or a product. *)
-    assert false
-
-  | TT.Atom x, TT.Atom y -> x = y
-
-  | TT.Prod ((x, t1), u1), TT.Prod ((_, t2), u2)  ->
-    ty ctx t1 t2 &&
+  | TT.Prod (t1, u1), TT.Prod (t2, u2)  ->
+    equal_ty t1 t2 &&&
     begin
-      let x' = TT.new_atom x in
-      let ctx = Context.extend_ident x' t1 ctx
-      and u1 = TT.unabstract_ty x' u1
-      and u2 = TT.unabstract_ty x' u2 in
-      ty ctx u1 u2
+      let (x, u1, u2) = Bindlib.unbind2 u1 u2 in
+      Context.with_var x t1 (equal_ty u1 u2)
     end
 
   | TT.Lambda _, TT.Lambda _  ->
@@ -112,56 +121,51 @@ and expr_whnf ctx e1 e2 =
        type-directed phase did not figure out that these have product types. *)
     assert false
 
-  | TT.Apply (e11, e12), TT.Apply (e21, e22) ->
-    let rec collect sp1 sp2 e1 e2 =
-      match e1, e2 with
-      | TT.Apply (e11, e12), TT.Apply (e21, e22) ->
-        collect (e12 :: sp1) (e22 :: sp2) e11 e21
-      | TT.Atom a1, TT.Atom a2 ->
-        Some ((a1, sp1), (a2, sp2))
-      | _, _ -> None
-    in
-    begin
-      match collect [e12] [e22] e11 e21 with
-      | None -> false
-      | Some ((a1, sp1), (a2, sp2)) -> spine ctx (a1, sp1) (a2, sp2)
-    end
+  | TT.(Var _ | Apply _), TT.(Var _ | Apply _) ->
+     begin
+       equal_neutral e1 e2 >>= function
+       | None -> return false
+       | Some _ -> return true
+     end
 
+  | TT.(Var _ | Type | Prod _ | Lambda _ | Apply _), _ ->
+    return false
 
-  | (TT.Type | TT.Bound _ | TT.Atom _ | TT.Prod _ | TT.Lambda _ | TT.Apply _), _ ->
-    false
+and equal_neutral e1 e2 =
+  match e1, e2 with
+
+  | TT.Var x, TT.Var y ->
+     if Bindlib.eq_vars x y then
+       let* (_, t) = Context.lookup_var x in
+       return (Some t)
+     else
+       return None
+
+  | TT.Apply (e1, e1'), TT.Apply (e2, e2') ->
+       begin
+         equal_neutral e1 e2 >>= function
+         | None -> return None
+         | Some t ->
+            begin
+              as_prod t >>= function
+              | None -> return None
+              | Some (t, u) ->
+                 begin
+                   equal_tm_at e1' e2' t >>= function
+                   | false -> return None
+                   | true -> return @@ Some (Bindlib.subst u e1')
+                 end
+
+            end
+       end
+
+  | TT.(Var _ | Apply _), _
+  | _, TT.(Var _ | Apply _) ->
+     return None
+
+  | TT.(Type | Prod _ | Lambda _), _ ->
+     assert false
 
 (** Compare two types. *)
-and ty ctx (TT.Ty ty1) (TT.Ty ty2) =
-  expr ctx ty1 ty2 TT.ty_Type
-
-(** Compare two spines of equal lengths.
-
-    A spine is a nested application of the form [a e1 e2 ... en]
-    where [a] is an atom.
-*)
-and spine ctx (a1, sp1) (a2, sp2) =
-  a1 = a2 &&
-  begin
-    let rec fold ty sp1 sp2 =
-      match as_prod ctx ty with
-      | None -> assert false
-      | Some ((_, t), u) ->
-        begin
-          match sp1, sp2 with
-          | [e1], [e2] -> expr ctx e1 e2 t
-          | e1 :: sp1, e2 :: sp2 ->
-            expr ctx e1 e2 t &&
-            begin
-              let u = TT.instantiate_ty e1 u in
-              fold u sp1 sp2
-            end
-          | _, _ ->
-            (* We should never be here, as the lengths of the spines should match. *)
-            assert false
-        end
-    in
-    match Context.lookup_atom_ty a1 ctx with
-    | None -> assert false
-    | Some ty -> fold ty sp1 sp2
-  end
+and equal_ty (TT.Ty ty1) (TT.Ty ty2) =
+  equal_tm_at ty1 ty2 TT.(Ty Type)
