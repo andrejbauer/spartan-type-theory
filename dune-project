@@ -2,6 +2,7 @@
 (name "spartan-type-theory")
 (version 2.0)
 (using menhir 2.0)
+(cram enable)
 
 (authors "Andrej Bauer <Andrej.Bauer@andrej.com>")
 (maintainers "Andrej Bauer <Andrej.Bauer@andrej.com>")
@@ -17,6 +18,7 @@
    "This project shows how to implement a minimalist type theory,
     which nevertheless could serve as a basis for a serious interpretation."
  )
+
  (depends
    (ocaml (>= 4.07.0))
    (dune :build)

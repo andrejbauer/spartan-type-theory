@@ -1,0 +1,13 @@
+Check Type.
+
+Check fun (A : Type) => A.
+
+Check fun (A B C : Type) => A.
+
+Check fun (A B C : Type) (x y : B) => x.
+
+Check λ (A : Type) ⇒ A.
+
+Check λ (A B C : Type) ⇒ A.
+
+Check λ (A B C : Type) (x y : B) ⇒ x.
