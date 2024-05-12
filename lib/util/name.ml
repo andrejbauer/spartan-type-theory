@@ -1,9 +1,9 @@
 (** Names of variables. *)
 
 type fixity =
-  | Word (** an ordinary word *)
-  | Prefix (** prefix operator *)
-  | Infix of Level.infix (** infix operator *)
+  | Word
+  | Prefix
+  | Infix of Level.infix
 
 let fixity x =
   let s = Bindlib.name_of x in

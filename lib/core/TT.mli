@@ -1,16 +1,16 @@
-(** {1 Spartan type theory} *)
+(** The spartan type theory core *)
 
 open Util
 
-(* Terms *)
+(** Terms *)
 type tm =
-  | Var of var (* variable *)
-  | Type (* the type of types qua term *)
-  | Prod of ty * ty binder (* dependent product *)
-  | Lambda of ty * tm binder (* function *)
-  | Apply of tm * tm (* application *)
+  | Var of var (** variable *)
+  | Type (** the type of types qua term *)
+  | Prod of ty * ty binder (** dependent product *)
+  | Lambda of ty * tm binder (** function *)
+  | Apply of tm * tm (** application *)
 
-(* Types *)
+(** Types *)
 and ty = Ty of tm
 
 and var = tm Bindlib.var
@@ -23,7 +23,7 @@ type ty_ = ty Bindlib.box
 
 type 'a binder_ = 'a binder Bindlib.box
 
-(* Boxed constructors *)
+(** Boxed constructors *)
 
 val var_ : var -> tm_
 
@@ -41,7 +41,7 @@ val lambda_ : ty_ -> tm binder_ -> tm_
 
 val apply_ : tm_ -> tm_ -> tm_
 
-(* Lifting functions *)
+(** Lifting functions *)
 
 val lift_tm : tm -> tm_
 
@@ -57,8 +57,8 @@ val unbox : 'a Bindlib.box -> 'a
 
 val unbind : 'a binder -> var * 'a
 
-(* Print a term *)
+(** Print a term *)
 val print_tm : ?max_level:Level.t -> penv:Bindlib.ctxt -> tm -> Format.formatter -> unit
 
-(* Print a type *)
+(** Print a type *)
 val print_ty : ?max_level:Level.t -> penv:Bindlib.ctxt -> ty -> Format.formatter -> unit

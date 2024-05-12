@@ -1,4 +1,4 @@
-(* The main executable. *)
+(** The main executable. *)
 
 open Util
 
