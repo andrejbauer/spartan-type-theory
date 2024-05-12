@@ -1,4 +1,4 @@
-(** Command-line processing and the main program. *)
+(* The main executable. *)
 
 open Util
 
@@ -53,26 +53,33 @@ let options = Arg.align [
      "<file> Load <file> into the initial environment");
   ]
 
-(** Interactive toplevel. *)
+(* Print the error message corresponding to an exception. *)
+let print_error ~penv = function
+  | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
+     Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err)
+
+  | Core.Typecheck.Error {Location.data=err; Location.loc} ->
+     Print.error "Typechecking error at %t:@ %t"
+       (Location.print loc)
+       (Core.Typecheck.print_error ~penv err)
+
+  | Sys.Break ->
+     Print.error "Interrupted." ;
+
+  | e ->
+     raise e
+
+(* Interactive toplevel. *)
 let interactive_shell state =
-  Format.printf "Very spartan type theory@." ;
+  Format.printf "Spartan type theory@." ;
 
   let rec loop state =
     let state =
       try
         Core.Toplevel.exec_interactive state
       with
-      | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
-         Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err) ;
-         state
-      | Core.Typecheck.Error {Location.data=err; Location.loc} ->
-         Print.error "Typechecking error at %t:@ %t"
-           (Location.print loc)
-           (Core.Typecheck.print_error ~penv:(Core.Toplevel.penv state) err) ;
-         state
-      | Sys.Break ->
-         Print.error "Interrupted." ;
-         state
+      | e ->
+         print_error ~penv:(Core.Toplevel.penv state) e ; state
     in loop state
   in
   try
@@ -80,14 +87,16 @@ let interactive_shell state =
   with
     End_of_file -> ()
 
-(** The main program. *)
+(* The main program. *)
 let _main =
   Sys.catch_break true ;
+
   (* Parse the arguments. *)
   Arg.parse
     options
     (fun str -> add_file false str ; Config.interactive_shell := false)
     usage ;
+
   (* Attempt to wrap yourself with a line-editing wrapper. *)
   if !Config.interactive_shell then
     begin match !Config.wrapper with
@@ -105,8 +114,10 @@ let _main =
              with Unix.Unix_error _ -> ())
           lst
     end ;
+
   (* Files were accumulated in the wrong order, so we reverse them *)
   files := List.rev !files ;
+
   (* Should we load the prelude file? *)
   begin
     match !Config.prelude_file with
@@ -138,12 +149,8 @@ let _main =
            run_code topstate files
       end
     with
-    | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
-       Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err)
-    | Core.Typecheck.Error {Location.data=err; Location.loc} ->
-       Print.error "Typechecking error at %t:@ %t"
-         (Location.print loc)
-         (Core.Typecheck.print_error ~penv:(Core.Toplevel.penv topstate) err)
+    | e ->
+       print_error ~penv:(Core.Toplevel.penv topstate) e
   in
 
   run_code Core.Toplevel.initial !files
