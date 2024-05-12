@@ -11,14 +11,19 @@ type tm =
 (** Types *)
 and ty = Ty of tm
 
+(** Variagble *)
 and var = tm Bindlib.var
 
+(** An entity with one bound variable *)
 and 'a binder = (tm, 'a) Bindlib.binder
 
+(** A boxed term, in the sense of [Bindlib]. *)
 type tm_ = tm Bindlib.box
 
+(** A boxed type, in the sense of [Bindlib]. *)
 type ty_ = ty Bindlib.box
 
+(** A boxed binder, in the sense of [Bindlib]. *)
 type 'a binder_ = 'a binder Bindlib.box
 
 (** Boxed constructors *)
@@ -47,10 +52,14 @@ val lift_ty : ty -> ty_
 
 val fresh_var : string -> var
 
+(** Generate a fresh variable that the user cannot. *)
 val anonymous_var : unit -> var
 
+(** Bind a variable in the given boxed entity. *)
 val bind_var : var -> 'a Bindlib.box -> 'a binder_
 
-val unbox : 'a Bindlib.box -> 'a
-
+(** Unbind a variable in the given bound entity. *)
 val unbind : 'a binder -> var * 'a
+
+(** Unbox an entity. *)
+val unbox : 'a Bindlib.box -> 'a
