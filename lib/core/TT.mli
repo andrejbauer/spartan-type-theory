@@ -1,7 +1,5 @@
 (** The spartan type theory core *)
 
-open Util
-
 (** Terms *)
 type tm =
   | Var of var (** variable *)
@@ -56,9 +54,3 @@ val bind_var : var -> 'a Bindlib.box -> 'a binder_
 val unbox : 'a Bindlib.box -> 'a
 
 val unbind : 'a binder -> var * 'a
-
-(** Print a term *)
-val print_tm : ?max_level:Level.t -> penv:Bindlib.ctxt -> tm -> Format.formatter -> unit
-
-(** Print a type *)
-val print_ty : ?max_level:Level.t -> penv:Bindlib.ctxt -> ty -> Format.formatter -> unit

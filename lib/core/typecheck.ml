@@ -1,8 +1,8 @@
 (** Spartan type checking. *)
 
-open Util
-
 module ISyntax = Parsing.Syntax
+
+module Location = Util.Location
 
 (** Type errors *)
 type type_error =
@@ -24,16 +24,16 @@ let print_error ~penv err ppf =
 
   | TypeExpected (ty_expected, ty_actual) ->
      Format.fprintf ppf "this expression should have type %t but has type %t"
-                        (TT.print_ty ~penv ty_expected)
-                        (TT.print_ty ~penv ty_actual)
+                        (Print.ty ~penv ty_expected)
+                        (Print.ty ~penv ty_actual)
 
   | TypeExpectedButFunction ty ->
      Format.fprintf ppf "this expression is a function but should have type %t"
-                        (TT.print_ty ~penv ty)
+                        (Print.ty ~penv ty)
 
   | FunctionExpected ty ->
      Format.fprintf ppf "this expression should be a function but has type %t"
-                        (TT.print_ty ~penv ty)
+                        (Print.ty ~penv ty)
 
   | CannotInferArgument x ->
      Format.fprintf ppf "cannot infer the type of %s" x
@@ -156,16 +156,16 @@ and toplevel' ~quiet ctx = function
   | ISyntax.TopCheck e ->
      let e, ty = Context.run ctx (infer e) in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
-       (TT.print_tm ~penv:(Context.penv ctx) e)
-       (TT.print_ty ~penv:(Context.penv ctx) ty) ;
+       (Print.tm ~penv:(Context.penv ctx) e)
+       (Print.ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
   | ISyntax.TopEval e ->
      let e, ty = Context.run ctx (infer e) in
      let e = Context.run ctx (Norm.norm_tm ~strategy:Norm.CBV e) in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
-       (TT.print_tm ~penv:(Context.penv ctx) e)
-       (TT.print_ty ~penv:(Context.penv ctx) ty) ;
+       (Print.tm ~penv:(Context.penv ctx) e)
+       (Print.ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
   | ISyntax.TopAxiom (x, ty) ->
