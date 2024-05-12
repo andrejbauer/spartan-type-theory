@@ -1,18 +1,20 @@
 # An implementation of spartan type theory
 
-This repository shows how to implement a minimalist type theory of the kind that is called
-"spartan" by some people. The implementation was presented at the [School and Workshop on
-Univalent Mathematics](https://unimath.github.io/bham2017/) which took place at the
-University of Birmingham in December 2017.
+This repository shows how to implement a minimalist type theory of the kind that is sometimes
+called “spartan”. The current version is an updated version of the one presented at the
+[School and Workshop on Univalent Mathematics](https://unimath.github.io/bham2017/) which took
+place at the University of Birmingham in December 2017.
 
 ## The type theory
 
 The dependent type theory `spartan` has the following ingridients:
 
 * A universe `Type` with `Type : Type`.
-* Dependent products written as `forall (x : T₁), T₂` or `∀ (x : T₁), T₂` or `∏ (x : T₁), T₂`.
-* Functions written as `fun (x : T) => e` or `λ (x : T) ⇒ e`. The typing annotation may be omitted.
-* Application written as `e₁ e₂`.
+* Dependent products, written as `forall (x : T₁), T₂` or `∀ (x : T₁), T₂` or `∏ (x : T₁), T₂`.
+* Functions, written as one of `fun (x : T) => e` or `λ (x : T) ⇒ e`. The typing annotation may
+  be omitted, i.e., `fun x => e`, and multiple abstractions may be shortened as
+  `λ x y (z u : T) (w : U) ⇒ e`.
+* Application `e₁ e₂`.
 * Type ascription written as `e : T`.
 
 Top-level commands:
@@ -51,23 +53,21 @@ Run `./spartan.exe --help` to see the command-line options and general usage.
 
 The purpose of the implementation is to keep the source uncomplicated and short. The
 essential bits of source code can be found in the following files. It should be possible
-for you to just read the entire source code. You should start with the core:
+for you to just read the entire source code.
 
-* [`syntax.ml`](src/syntax.ml) -- abstract syntax of the input
-* [`context.ml`](src/context.ml) -- contexts
-* [`equal.ml`](src/equal.ml) -- normalization
-* [`typecheck.ml`](src/typecheck.ml) -- type checking and conversion from abstract syntax to core type theory
-* [`TT.ml`](src/TT.ml) -- the core type theory
+It is best to first familiarize yourself with the core:
 
-and continue with the infrastructure
+* [`lib/core/TT.ml`](./lib/core/TT.ml) – the core type theory
+* [`lib/core/context.ml`](./lib/core/context.ml) – typing context
+* [`lib/core/typecheck.ml`](./lib/coretypecheck.ml) – type checking and elaboration
+* [`lib/core/equal.ml`](./lib/core/equal.ml) – equality and normalization
+* [`lib/core/toplevel.ml`](./lib/core/toplevel.ml) – top-level commands
 
-* [`spartan.ml`](src/spartan.ml) -- interactive top level
-* [`print.ml`](src/print.ml) -- printing and message support
-* [`desugar.ml`](src/desugar.ml) -- conversion from parsed syntax to abstract syntax
-* [`lexer.ml`](src/lexer.ml) and [`parser.mly`](src/parser.mly) -- parsing into concrete syntax
+Continue with the infrastructure:
 
-## What experiments should I perform to learn more?
-
-There are many things you can try, for example try adding dependent sums, or basic types
-`unit`, `bool` and `nat`.
+* [`lib/parsing/syntax.ml`](./lib/parsing/syntax.ml) – abstract syntax of the input code
+* [`lib/parsing/lexer.ml`](./lib/parsing/lexer.ml) – the lexer
+* [`lib/parsing/parser.mly`](./lib/parsing/parser.mly) – the parser
+* [`lib/util`](./lib/util) – various utilities
+* [`bin/spartan.ml`](bin/spartan.ml) – the main executable
 
