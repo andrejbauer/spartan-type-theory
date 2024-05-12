@@ -60,6 +60,7 @@ It is best to first familiarize yourself with the core:
 * [`lib/core/TT.ml`](./lib/core/TT.ml) – the core type theory
 * [`lib/core/context.ml`](./lib/core/context.ml) – typing context
 * [`lib/core/typecheck.ml`](./lib/coretypecheck.ml) – type checking and elaboration
+* [`lib/core/norm.ml`](./lib/core/norm.ml) – normalization
 * [`lib/core/equal.ml`](./lib/core/equal.ml) – equality and normalization
 * [`lib/core/toplevel.ml`](./lib/core/toplevel.ml) – top-level commands
 

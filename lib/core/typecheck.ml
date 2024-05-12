@@ -79,7 +79,7 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
      let* (e1_, t1_) = infer_ e1 in
      let t1 = TT.unbox t1_ in
      begin
-       Equal.as_prod t1 >>= function
+       Norm.as_prod t1 >>= function
        | None -> error ~loc (FunctionExpected t1)
        | Some (u, t) ->
           let* e2_ = check_ e2 u in
@@ -99,7 +99,7 @@ and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
 
   | ISyntax.Lambda ((x, None), e) ->
      begin
-       Equal.as_prod ty >>= function
+       Norm.as_prod ty >>= function
        | None -> error ~loc (TypeExpectedButFunction ty)
        | Some (t, u) ->
           Context.with_ident x t
@@ -162,7 +162,7 @@ and toplevel' ~quiet ctx = function
 
   | ISyntax.TopEval e ->
      let e, ty = Context.run ctx (infer e) in
-     let e = Context.run ctx (Equal.norm_tm ~strategy:Equal.CBV e) in
+     let e = Context.run ctx (Norm.norm_tm ~strategy:Norm.CBV e) in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
        (TT.print_tm ~penv:(Context.penv ctx) e)
        (TT.print_ty ~penv:(Context.penv ctx) ty) ;
