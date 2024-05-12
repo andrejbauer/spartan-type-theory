@@ -11,4 +11,4 @@ val print_error : penv:Bindlib.ctxt -> type_error -> Format.formatter -> unit
 val toplevel : quiet:bool -> Context.t -> Parsing.Syntax.toplevel -> Context.t
 
 (** Type-check the contents of a file. *)
-val topfile : quiet:bool -> Context.t -> Parsing.Syntax.toplevel list -> Context.t
+val topfile : quiet:bool -> Context.t -> string -> Context.t

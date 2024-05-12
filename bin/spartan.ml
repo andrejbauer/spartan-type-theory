@@ -65,9 +65,6 @@ let interactive_shell state =
       | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
          Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err) ;
          state
-      | Desugared.Desugar.Error {Location.data=err; Location.loc} ->
-         Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugared.Desugar.print_error err) ;
-         state
       | Core.Typecheck.Error {Location.data=err; Location.loc} ->
          Print.error "Typechecking error at %t:@ %t"
            (Location.print loc)
@@ -143,8 +140,6 @@ let _main =
     with
     | Parsing.Ulexbuf.Error {Location.data=err; Location.loc} ->
        Print.error "Lexical error at %t:@ %t" (Location.print loc) (Parsing.Ulexbuf.print_error err)
-    | Desugared.Desugar.Error {Location.data=err; Location.loc} ->
-       Print.error "Syntax error at %t:@ %t" (Location.print loc) (Desugared.Desugar.print_error err)
     | Core.Typecheck.Error {Location.data=err; Location.loc} ->
        Print.error "Typechecking error at %t:@ %t"
          (Location.print loc)

@@ -10,7 +10,6 @@ and tm' =
   | Prod of (string * ty) * ty
   | Lambda of (string * ty option) * ty
   | Apply of tm * tm
-  | Arrow of tm * tm
   | Ascribe of tm * ty
 
 (* Parsed type (equal to tmession). *)
@@ -28,3 +27,5 @@ and toplevel' =
 val prod : (string list * ty) Location.t list -> ty -> tm'
 
 val lambda : (string list * ty option) Location.t list -> tm -> tm'
+
+val arrow : ty -> ty -> tm'

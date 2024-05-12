@@ -1,25 +1,14 @@
 (** Top-level processing. *)
 
-type state =
-  {
-    desugar : Desugared.Desugar.context; (** The desugaring state *)
-    typecheck : Context.t; (** The typechecking state *)
-  }
+type state = Context.t
 
-let initial = {
-    desugar = Desugared.Desugar.initial;
-    typecheck = Context.initial;
-}
+let initial = Context.initial
 
-let penv {typecheck;_} = Context.penv typecheck
+let penv = Context.penv
 
-let exec_interactive {desugar; typecheck} =
+let exec_interactive ctx =
   let e = Parsing.Lexer.read_toplevel Parsing.Parser.commandline () in
-  let desugar, e = Desugared.Desugar.toplevel desugar e in
-  let typecheck = Typecheck.toplevel ~quiet:false typecheck e in
-  {desugar; typecheck}
+  Typecheck.toplevel ~quiet:false ctx e
 
-let load_file ~quiet {desugar; typecheck} fn =
-  let desugar, es = Desugared.Desugar.load desugar fn in
-  let typecheck = Typecheck.topfile ~quiet typecheck es in
-  {desugar; typecheck}
+let load_file ~quiet ctx fn =
+  Typecheck.topfile ~quiet ctx fn

@@ -91,7 +91,7 @@ term_:
     { Syntax.prod a e }
 
   | e1=infix_term ARROW e2=term
-    { Syntax.Arrow (e1, e2) }
+    { Syntax.arrow e1 e2 }
 
   | LAMBDA a=lambda_abstraction DARROW e=term
     { Syntax.lambda a e }
@@ -157,7 +157,7 @@ var_name:
     { op.Location.data }
 
   | UNDERSCORE
-    { Name.anonymous }
+    { Name.anonymous () }
 
 
 %inline infix:

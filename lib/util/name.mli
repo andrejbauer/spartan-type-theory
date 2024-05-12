@@ -4,7 +4,8 @@ type fixity =
   | Prefix (** prefix operator *)
   | Infix of Level.infix (** infix operator *)
 
-val anonymous : string
+(* Generate a fresh name that the user cannot possibly generate *)
+val anonymous : unit -> string
 
 (** The fixity of a variable *)
 val fixity : 'a Bindlib.var -> fixity

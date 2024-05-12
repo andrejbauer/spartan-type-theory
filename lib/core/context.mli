@@ -14,10 +14,14 @@ module Monad : sig
 
   (* Return a pure value *)
   val return : 'b -> 'b m
+
 end
 
 (* The initial, empty typing context. *)
 val initial : t
+
+(* Run a computation in the given context. *)
+val run : t -> 'a m -> 'a
 
 (* Extend the context with a variable and return it *)
 val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t

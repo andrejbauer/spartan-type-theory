@@ -13,7 +13,6 @@ module VarMap = Map.Make(struct
 (** A typing context is a list of known identifiers and definitional equalities. *)
 type t =
   { idents : TT.var IdentMap.t
-  ; vars_ : (TT.tm_ option * TT.ty_) VarMap.t
   ; vars : (TT.tm option * TT.ty) VarMap.t
   }
 
@@ -33,25 +32,22 @@ end
 (** The initial, empty typing context. *)
 let initial =
   { idents = IdentMap.empty
-  ; vars_ = VarMap.empty
   ; vars = VarMap.empty
   }
 
+let run ctx c = c ctx
+
 let penv _ = Bindlib.empty_ctxt
 
-let extend_var_ x v ?def_ ty_ {idents;vars_;vars} =
+let extend_var_ x v ?def_ ty_ {idents;vars} =
   let ty = Bindlib.unbox ty_
   and def = Option.map Bindlib.unbox def_ in
   { idents = IdentMap.add x v idents
-  ; vars_ = VarMap.add v (def_, ty_) vars_
   ; vars = VarMap.add v (def, ty) vars
   }
 
-let extend_var x v ?def ty {idents; vars_; vars} =
-  let ty_ = TT.lift_ty ty
-  and def_ = Option.map TT.lift_tm def in
+let extend_var x v ?def ty {idents; vars} =
   { idents = IdentMap.add x v idents
-  ; vars_ = VarMap.add v (def_, ty_) vars_
   ; vars = VarMap.add v (def, ty) vars
   }
 
@@ -63,7 +59,9 @@ let lookup_ident x {idents; _} = IdentMap.find_opt x idents
 
 let lookup_var v {vars; _} = VarMap.find v vars
 
-let lookup_var_ v {vars_; _} = VarMap.find v vars_
+let lookup_var_ v {vars; _} =
+  let (def, t) = VarMap.find v vars in
+  (Option.map TT.lift_tm def, TT.lift_ty t)
 
 let with_var v ?def t (c : 'a m) ctx =
   let x = Bindlib.name_of v in

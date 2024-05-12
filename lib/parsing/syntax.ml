@@ -7,7 +7,6 @@ and tm' =
   | Prod of (string * ty) * ty
   | Lambda of (string * ty option) * ty
   | Apply of tm * tm
-  | Arrow of tm * tm
   | Ascribe of tm * ty
 
 (* Parsed type (equal to tmession). *)
@@ -47,3 +46,7 @@ let lambda xus t =
        fold' xs
   in
   (fold xus).Location.data
+
+let arrow u t =
+  let x = Name.anonymous () in
+  Prod ((x, u), t)

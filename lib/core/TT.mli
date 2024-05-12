@@ -29,6 +29,8 @@ val var_ : var -> tm_
 
 val type_ : tm_
 
+val ty_ : tm_ -> ty_
+
 val ty_type_ : ty_
 
 val prod_ : ty_ -> ty binder_ -> tm_
@@ -46,6 +48,8 @@ val lift_tm : tm -> tm_
 val lift_ty : ty -> ty_
 
 val fresh_var : string -> var
+
+val anonymous_var : unit -> var
 
 val bind_var : var -> 'a Bindlib.box -> 'a binder_
 

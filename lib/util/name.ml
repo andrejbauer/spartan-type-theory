@@ -19,7 +19,9 @@ let fixity x =
     | '*' | '/' | '%' -> Infix Level.Infix3
     | _ -> Word
 
-let anonymous = "_"
+let anonymous =
+  let k = ref 0 in
+  fun () -> (incr k ; "_" ^ string_of_int !k)
 
 let print_var ?(parentheses=true) x ppf =
   let s = Bindlib.name_of x in

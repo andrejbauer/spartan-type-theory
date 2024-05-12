@@ -66,13 +66,12 @@ let as_prod t =
   | TT.Prod (t, u) -> return @@ Some (t, u)
   | _ -> return None
 
-
-let as_prod (t_ : TT.ty_) =
-  let t = TT.unbox t_ in
-  let* TT.Ty t' = norm_ty ~strategy:WHNF t in
-  match t' with
-  | TT.Prod (t, u) -> return @@ Some TT.(lift_ty t, Bindlib.apply_binder lift_ty u)
-  | _ -> return None
+(* let as_prod_ (t_ : TT.ty_) = *)
+(*   let t = TT.unbox t_ in *)
+(*   let* TT.Ty t' = norm_ty ~strategy:WHNF t in *)
+(*   match t' with *)
+(*   | TT.Prod (t, u) -> return @@ Some TT.(lift_ty t, Bindlib.apply_binder lift_ty u) *)
+(*   | _ -> return None *)
 
 (** Compare expressions [e1] and [e2] at type [ty]? *)
 let rec equal_tm_at e1 e2 ty =

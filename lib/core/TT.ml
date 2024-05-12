@@ -34,6 +34,8 @@ let var_ = Bindlib.box_var
 
 let type_ = Bindlib.box Type
 
+let ty_ = Bindlib.box_apply (fun t -> Ty t)
+
 let ty_type_ = Bindlib.box (Ty Type)
 
 let prod_ = Bindlib.box_apply2 (fun t u -> Prod (t, u))
@@ -88,6 +90,8 @@ let as_lambda ~penv = function
   | _ -> None
 
 let fresh_var x = Bindlib.new_var (fun x -> Var x) x
+
+let anonymous_var () = fresh_var (Name.anonymous ())
 
 (* Printing routines *)
 
