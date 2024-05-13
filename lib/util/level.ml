@@ -40,4 +40,7 @@ let arr = binder
 let arr_left = arr - 1
 let arr_right = arr
 
-let ascription = 950
+let ascription = 800
+
+let let_binding = 900
+let let_bound = 950

@@ -3,6 +3,7 @@
 (** Terms *)
 type tm =
   | Var of var (** variable *)
+  | Let of tm * tm binder (** A let binding *)
   | Type (** the type of types qua term *)
   | Prod of ty * ty binder (** dependent product *)
   | Lambda of ty * tm binder (** function *)

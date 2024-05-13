@@ -47,3 +47,9 @@ val arr_right : t
 
 (** The level of type ascription *)
 val ascription : t
+
+(** The level of a let binding *)
+val let_binding : t
+
+(** The level of the let-bound expression *)
+val let_bound : t
