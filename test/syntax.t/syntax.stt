@@ -1,13 +1,25 @@
-Check Type.
+(* Every bit of syntax should appear in this file. *)
 
-Check fun (A : Type) => A.
+check Type
 
-Check fun (A B C : Type) => A.
+eval Type
 
-Check fun (A B C : Type) (x y : B) => x.
+def A := Type
 
-Check λ (A : Type) ⇒ A.
+axiom B : A
 
-Check λ (A B C : Type) ⇒ A.
+(* Functions *)
 
-Check λ (A B C : Type) (x y : B) ⇒ x.
+check fun (A : Type) => A
+
+check fun (A B C : Type) => A
+
+check fun (A B C : Type) (x y : B) => x
+
+check λ (A : Type) ⇒ A
+
+check λ (A B C : Type) ⇒ A
+
+check (λ x y z ⇒ y) : B → B → B → B
+
+check λ (A B C : Type) (x y : B) ⇒ x

@@ -4,13 +4,13 @@ open Util
 
 (** Reserved words. *)
 let reserved = [
-  ("Axiom", Parser.AXIOM) ;
-  ("Check", Parser.CHECK) ;
-  ("Definition", Parser.DEFINITION) ;
-  ("Eval", Parser.EVAL) ;
+  ("axiom", Parser.AXIOM) ;
+  ("check", Parser.CHECK) ;
+  ("def", Parser.DEF) ;
+  ("eval", Parser.EVAL) ;
   ("fun", Parser.LAMBDA) ;
   ("λ", Parser.LAMBDA) ;
-  ("Load", Parser.LOAD) ;
+  ("load", Parser.LOAD) ;
   ("forall", Parser.PROD) ;
   ("∀", Parser.PROD) ;
   ("Π", Parser.PROD) ;
@@ -79,7 +79,6 @@ and token_aux ({ Ulexbuf.stream;_ } as lexbuf) =
   | '_'                      -> f (); Parser.UNDERSCORE
   | '('                      -> f (); Parser.LPAREN
   | ')'                      -> f (); Parser.RPAREN
-  | '.'                      -> f (); Parser.PERIOD
   | ','                      -> f (); Parser.COMMA
   | ':'                      -> f (); Parser.COLON
   | "=>" | 8658 | 10233      -> f (); Parser.DARROW

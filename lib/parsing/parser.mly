@@ -13,7 +13,7 @@ open Util
 %token UNDERSCORE
 
 (* Parentheses & punctuations *)
-%token LPAREN RPAREN PERIOD
+%token LPAREN RPAREN
 %token COLONEQ
 %token COMMA COLON DARROW ARROW
 
@@ -25,7 +25,7 @@ open Util
 (* Toplevel commands *)
 %token <string> QUOTED_STRING
 %token LOAD
-%token DEFINITION
+%token DEF
 %token CHECK
 %token EVAL
 %token AXIOM
@@ -54,12 +54,12 @@ filecontents:
   |
     { [] }
 
-  | d=topcomp PERIOD ds=filecontents
+  | d=topcomp ds=filecontents
     { d :: ds }
 
 
 commandline:
-  | topcomp PERIOD EOF
+  | topcomp EOF
     { $1 }
 
 
@@ -69,7 +69,7 @@ topcomp_:
   | LOAD fn=QUOTED_STRING
     { Syntax.TopLoad fn }
 
-  | DEFINITION x=var_name COLONEQ e=term
+  | DEF x=var_name COLONEQ e=term
     { Syntax.TopDefinition (x, e) }
 
   | CHECK e=term
