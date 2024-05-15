@@ -55,6 +55,14 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
           return (TT.var_ v, t)
      end
 
+  | ISyntax.Let (x, e1, e2) ->
+     let* (e1, t1) = infer_ e1 in
+     Context.with_ident_ x ~def:e1 t1
+       (fun v ->
+         let* (e2, t2) = infer_ e2 in
+         let t2 = TT.(lift_ty (Bindlib.subst (unbox (bind_var v t2)) (unbox e1))) in
+         return TT.(let_ e1 t1 (bind_var v e2), t2))
+
   | ISyntax.Type ->
      return TT.(type_, ty_type_)
 
@@ -108,6 +116,13 @@ and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
               let* e = check_ e u' in
               return TT.(lambda_ (TT.lift_ty t) (bind_var v e)))
      end
+
+  | ISyntax.Let (x, e1, e2) ->
+     let* (e1, t1) = infer_ e1 in
+     Context.with_ident_ x ~def:e1 t1
+       (fun v ->
+         let* e2 = check_ e2 ty in
+         return TT.(let_ e1 t1 (bind_var v e2)))
 
   | ISyntax.Lambda ((_, Some _), _)
   | ISyntax.Apply _

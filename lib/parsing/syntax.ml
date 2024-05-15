@@ -3,9 +3,10 @@ open Util
 type tm = tm' Location.t
 and tm' =
   | Var of string
+  | Let of string * tm * tm
   | Type
   | Prod of (string * ty) * ty
-  | Lambda of (string * ty option) * ty
+  | Lambda of (string * ty option) * tm
   | Apply of tm * tm
   | Ascribe of tm * ty
 
@@ -19,7 +20,7 @@ and toplevel' =
   | TopDefinition of string * tm
   | TopCheck of tm
   | TopEval of tm
-  | TopAxiom of string * tm
+  | TopAxiom of string * ty
 
 let prod xus t =
   let rec fold = function

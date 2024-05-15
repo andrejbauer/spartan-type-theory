@@ -53,3 +53,6 @@ val let_binding : t
 
 (** The level of the let-bound expression *)
 val let_bound : t
+
+(** The level of the body of a let-bound expression *)
+val let_body : t

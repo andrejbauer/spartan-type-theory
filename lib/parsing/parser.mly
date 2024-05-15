@@ -18,6 +18,7 @@ open Util
 %token COMMA COLON DARROW ARROW
 
 (* Expressions *)
+%token LET IN
 %token TYPE
 %token PROD
 %token LAMBDA
@@ -95,6 +96,9 @@ term_:
 
   | LAMBDA a=lambda_abstraction DARROW e=term
     { Syntax.lambda a e }
+
+  | LET x=var_name COLONEQ e1=term IN e2=term
+    { Syntax.Let (x, e1, e2) }
 
   | e=infix_term COLON t=term
     { Syntax.Ascribe (e, t) }

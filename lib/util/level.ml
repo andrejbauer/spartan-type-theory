@@ -44,3 +44,4 @@ let ascription = 800
 
 let let_binding = 900
 let let_bound = 950
+let let_body = no_parens

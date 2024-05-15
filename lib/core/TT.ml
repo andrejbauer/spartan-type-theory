@@ -5,7 +5,7 @@ open Util
 (** Term *)
 type tm =
   | Var of var (** A free variable *)
-  | Let of tm * tm binder (** A let binding *)
+  | Let of tm * ty * tm binder (** A let binding *)
   | Type (** the type of types *)
   | Prod of ty * ty binder (** dependent product *)
   | Lambda of ty * tm binder (** lambda abstraction *)
@@ -33,7 +33,7 @@ let box_binder = Bindlib.box_binder
 
 let var_ = Bindlib.box_var
 
-let let_ = Bindlib.box_apply2 (fun e1 e2 -> Let (e1, e2))
+let let_ = Bindlib.box_apply3 (fun e1 t e2 -> Let (e1, t, e2))
 
 let type_ = Bindlib.box Type
 
@@ -56,8 +56,8 @@ let rec lift_tm = function
 
   | Var v -> var_ v
 
-  | Let (e1, e2) ->
-     let_ (lift_tm e1) (box_binder lift_tm e2)
+  | Let (e1, t, e2) ->
+     let_ (lift_tm e1) (lift_ty t) (box_binder lift_tm e2)
 
   | Type -> type_
 

@@ -19,6 +19,15 @@ let rec norm_tm ~strategy e =
       | (Some e, _) -> norm_tm ~strategy e
     end
 
+  | TT.Let (e1, t, e2) ->
+     let* e1 =
+       match strategy with
+       | WHNF -> return e1
+       | CBV -> norm_tm ~strategy e1
+     in
+     let (v, e2) = TT.unbind e2 in
+     Context.with_var v ~def:e1 t (norm_tm ~strategy e2)
+
   | TT.Prod _ ->
      return e
 

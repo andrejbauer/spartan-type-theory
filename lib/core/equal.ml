@@ -33,8 +33,8 @@ let rec equal_tm_at e1 e2 ty =
        (* Type-directed phase is done, we compare normal forms. *)
        equal_tm e1 e2
 
-    | TT.Lambda _ ->
-      (* A type should never normalize to an abstraction *)
+    | TT.(Lambda _ | Let _) ->
+      (* A type should never normalize to an abstraction or a let-binding *)
       assert false
   end
 
@@ -58,6 +58,9 @@ and equal_tm e1 e2 =
     (* We should never have to compare two lambdas, as that would mean that the
        type-directed phase did not figure out that these have product types. *)
     assert false
+
+  | TT.Let _, _ | _, TT.Let _ ->
+     assert false
 
   | TT.(Var _ | Apply _), TT.(Var _ | Apply _) ->
      begin
@@ -101,7 +104,7 @@ and equal_neutral e1 e2 =
   | _, TT.(Var _ | Apply _) ->
      return None
 
-  | TT.(Type | Prod _ | Lambda _), _ ->
+  | TT.(Type | Prod _ | Lambda _ | Let _), _ ->
      assert false
 
 (** Compare two types. *)

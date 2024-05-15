@@ -3,7 +3,7 @@
 (** Terms *)
 type tm =
   | Var of var (** variable *)
-  | Let of tm * tm binder (** A let binding *)
+  | Let of tm * ty * tm binder (** A let binding *)
   | Type (** the type of types qua term *)
   | Prod of ty * ty binder (** dependent product *)
   | Lambda of ty * tm binder (** function *)
@@ -30,6 +30,8 @@ type 'a binder_ = 'a binder Bindlib.box
 (** Boxed constructors *)
 
 val var_ : var -> tm_
+
+val let_ : tm_ -> ty_ -> tm binder_ -> tm_
 
 val type_ : tm_
 

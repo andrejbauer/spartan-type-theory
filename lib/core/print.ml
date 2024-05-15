@@ -21,11 +21,12 @@ let rec tm ?max_level ~penv e ppf =
   | TT.Var x ->
      Format.fprintf ppf "%s" (Bindlib.name_of x)
 
-  | TT.Let (e1, e2) ->
+  | TT.Let (e1, _, e2) ->
      let (x, e2, penv') = Bindlib.unbind_in penv e2 in
      Util.Print.print ?max_level ~at_level:Level.let_binding ppf "let@ %s :=@ %t@ in@ %t"
-       x
-       (tm ?max_level:Level.let_bound e1)
+       (Bindlib.name_of x)
+       (tm ~max_level:Level.let_bound ~penv e1)
+       (tm ~max_level:Level.let_body ~penv:penv' e2)
 
   | TT.Type ->
      Format.fprintf ppf "Type"

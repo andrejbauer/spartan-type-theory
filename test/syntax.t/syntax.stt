@@ -23,3 +23,9 @@ check λ (A B C : Type) ⇒ A
 check (λ x y z ⇒ y) : B → B → B → B
 
 check λ (A B C : Type) (x y : B) ⇒ x
+
+(* Let statement *)
+
+def id := fun (A : Type) (x : A) => x
+
+check λ (S : Type) (c : S) (T : S → Type) (u : T c) ⇒ let x := id S c in (u : T (id S x))
