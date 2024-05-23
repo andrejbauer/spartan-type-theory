@@ -3,6 +3,7 @@
 (** Terms *)
 type tm =
   | Var of var (** variable *)
+  | Meta of meta
   | Let of tm * ty * tm binder (** A let binding *)
   | Type (** the type of types qua term *)
   | Prod of ty * ty binder (** dependent product *)
@@ -18,6 +19,15 @@ and var = tm Bindlib.var
 (** An entity with one bound variable *)
 and 'a binder = (tm, 'a) Bindlib.binder
 
+(** An entity with bound variables *)
+and 'a mbinder = (tm, 'a) Bindlib.mbinder
+
+and meta =
+  { meta_ty : ty
+  ; meta_args : tm array
+  ; mutable meta_val : tm mbinder option
+  }
+
 (** A boxed term, in the sense of [Bindlib]. *)
 type tm_ = tm Bindlib.box
 
@@ -26,6 +36,9 @@ type ty_ = ty Bindlib.box
 
 (** A boxed binder, in the sense of [Bindlib]. *)
 type 'a binder_ = 'a binder Bindlib.box
+
+(** A boxed binder, in the sense of [Bindlib]. *)
+type 'a mbinder_ = 'a mbinder Bindlib.box
 
 (** Boxed constructors *)
 
