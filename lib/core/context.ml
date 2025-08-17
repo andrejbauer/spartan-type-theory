@@ -16,17 +16,19 @@ type t =
   ; vars : (TT.tm option * TT.ty) VarMap.t
   }
 
-type 'a m = t -> 'a
+type 'a m = t -> t * 'a
 
 module Monad =
 struct
-  let ( let* ) c1 c2 (ctx : t) =
-    let v1 = c1 ctx in
+  let ( let* ) : 'a 'b . 'a m -> ('a -> 'b m) -> 'b m =
+    fun c1 c2 ctx ->
+    let ctx, v1 = c1 ctx in
     c2 v1 ctx
 
   let ( >>= ) = ( let* )
 
-  let return v (_ : t) = v
+  let return : 'a . 'a -> 'a m =
+    fun v t -> (t, v)
 end
 
 (** The initial, empty typing context. *)
@@ -55,13 +57,13 @@ let extend x ?def ty ctx =
   let v = TT.fresh_var x in
   v, extend_var x v ?def ty ctx
 
-let lookup_ident x {idents; _} = IdentMap.find_opt x idents
+let lookup_ident x ctx = ctx, IdentMap.find_opt x ctx.idents
 
-let lookup_var v {vars; _} = VarMap.find v vars
+let lookup_var v ctx = ctx, VarMap.find v ctx.vars
 
-let lookup_var_ v {vars; _} =
-  let (def, t) = VarMap.find v vars in
-  (Option.map TT.lift_tm def, TT.lift_ty t)
+let lookup_var_ v ctx =
+  let (def, t) = VarMap.find v ctx.vars in
+  ctx, (Option.map TT.lift_tm def, TT.lift_ty t)
 
 let with_var v ?def t (c : 'a m) ctx =
   let x = Bindlib.name_of v in

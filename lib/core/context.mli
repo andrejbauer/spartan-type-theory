@@ -21,7 +21,7 @@ end
 val initial : t
 
 (* Run a computation in the given context. *)
-val run : t -> 'a m -> 'a
+val run : t -> 'a m -> t * 'a
 
 (* Extend the context with a variable and return it *)
 val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t
