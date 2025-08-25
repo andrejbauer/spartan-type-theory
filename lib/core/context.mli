@@ -28,6 +28,10 @@ val initial : t
 (* Run a computation in the given context. *)
 val run : t -> 'a m -> t * 'a
 
+(* Return a function which checks whether a variable is an element
+   of the current context. *)
+val elem : (TT.var -> bool) m
+
 (* Assign a value to a meta-variable. It is an error to try to assign a value
    whose free variables are not contained in the context of the meta-variable. *)
 val define : TT.var -> TT.tm -> unit m
@@ -68,3 +72,5 @@ val with_ident : string -> ?def:TT.tm -> TT.ty -> (TT.var -> 'a m) -> 'a m
 val with_ident_ : string -> ?def:TT.tm_ -> TT.ty_ -> (TT.var -> 'a m) -> 'a m
 
 val with_var : TT.var -> ?def:TT.tm -> TT.ty -> 'a m -> 'a m
+
+val with_meta_ : string -> TT.ty_ -> chk:(TT.tm -> bool) -> (TT.var -> 'a m) -> 'a m

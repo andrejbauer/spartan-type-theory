@@ -10,11 +10,6 @@ module VarMap = Map.Make(struct
                     let compare = Bindlib.compare_vars
                   end)
 
-module VarSet = Set.Make(struct
-                    type t = TT.var
-                    let compare = Bindlib.compare_vars
-                end)
-
 type entry =
   | Free
   | Meta of (TT.tm -> bool)
@@ -51,6 +46,9 @@ let run ctx c = c ctx
 
 let penv _ = Bindlib.empty_ctxt
 
+let elem ctx =
+  ctx, (fun x -> VarMap.mem x ctx.vars)
+
 let define v def ctx =
   match VarMap.find v ctx.vars with
 
@@ -63,12 +61,6 @@ let define v def ctx =
     let ctx = { ctx with vars = VarMap.add v (Defined def, ty) ctx.vars } in
     ctx, ()
 
-(* let extend_var_ x v ~entry ty_ {idents;vars} = *)
-(*   let ty = Bindlib.unbox ty_ *)
-(*   and def = Option.map Bindlib.unbox def_ in *)
-(*   { idents = IdentMap.add x v idents *)
-(*   ; vars = VarMap.add v (entry, ty) vars *)
-(*   } *)
 
 let _extend_var x v ent ty {idents; vars} =
   { idents = IdentMap.add x v idents
@@ -130,4 +122,10 @@ let with_ident_ x ?def ty_ (c : TT.var -> 'a m) ctx =
 
 let with_ident x ?def ty (c : TT.var -> 'a m) ctx =
   let v, local_ctx = extend x ?def ty ctx in
+  c v local_ctx
+
+let with_meta_ x ty_ ~chk c ctx =
+  let v = TT.fresh_var x in
+  let ty = TT.unbox ty_ in
+  let local_ctx = _extend_var x v (Meta chk) ty ctx in
   c v local_ctx

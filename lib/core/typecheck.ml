@@ -4,6 +4,11 @@ module ISyntax = Parsing.Syntax
 
 module Location = Util.Location
 
+module VarSet = Set.Make(struct
+    type t = TT.var
+    let compare = Bindlib.compare_vars
+  end)
+
 (** Type errors *)
 type type_error =
   | UnknownIdent of string
@@ -68,7 +73,8 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
 
   | ISyntax.Meta (x, u, e) ->
     let* u = check_ty_ u in
-    Context.with_ident_ x u
+    let* elem = Context.elem in
+    Context.with_meta_ x u ~chk:(TT.check_tm_vars elem)
       (fun v ->
          let* (e, t) = infer_ e in
          let* def = Context.lookup_def v in
