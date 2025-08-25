@@ -23,6 +23,10 @@ val initial : t
 (* Run a computation in the given context. *)
 val run : t -> 'a m -> t * 'a
 
+(* Assign a value to a variable. It is the callers responsibility
+   that the term has the type of the variable. *)
+val define : TT.var -> TT.tm -> unit m
+
 (* Extend the context with a variable and return it *)
 val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t
 
@@ -37,9 +41,9 @@ val lookup_var_ : TT.var -> (TT.tm_ option * TT.ty_) m
 
 val lookup_ident : string -> TT.var option m
 
-(** Run a computation in a context extended with a variable, passing it the newly
-    created variable. It is the callers responsibility that the result be valid in
-    the original context. *)
+(* Run a computation in a context extended with a variable, passing it the newly
+   created variable. It is the callers responsibility that the result be valid in
+   the original context. *)
 (* val with_var_ : string -> TT.ty_ -> ?def:TT.tm_ -> (TT.var -> 'a m) -> 'a m *)
 
 val with_ident : string -> ?def:TT.tm -> TT.ty -> (TT.var -> 'a m) -> 'a m

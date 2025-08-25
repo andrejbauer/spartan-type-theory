@@ -41,6 +41,16 @@ let run ctx c = c ctx
 
 let penv _ = Bindlib.empty_ctxt
 
+let define v def ctx =
+  match VarMap.find v ctx.vars with
+  | (Some _, _) ->
+    (* The variable already is defined, this shouldn't happen.
+       We need proper error reporting. *)
+    assert false
+  | (None, ty) ->
+    let ctx = { ctx with vars = VarMap.add v (Some def, ty) ctx.vars } in
+    ctx, ()
+
 let extend_var_ x v ?def_ ty_ {idents;vars} =
   let ty = Bindlib.unbox ty_
   and def = Option.map Bindlib.unbox def_ in
