@@ -1,3 +1,8 @@
+type entry =
+  | Free
+  | Meta of (TT.tm -> bool)
+  | Defined of TT.tm
+
 type t
 
 (* The monad for computing in a typing context *)
@@ -23,8 +28,8 @@ val initial : t
 (* Run a computation in the given context. *)
 val run : t -> 'a m -> t * 'a
 
-(* Assign a value to a variable. It is the callers responsibility
-   that the term has the type of the variable. *)
+(* Assign a value to a meta-variable. It is an error to try to assign a value
+   whose free variables are not contained in the context of the meta-variable. *)
 val define : TT.var -> TT.tm -> unit m
 
 (* Extend the context with a variable and return it *)
@@ -33,17 +38,29 @@ val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t
 (* The list of identifiers which should not be used for printing bound variables. *)
 val penv : t -> Bindlib.ctxt
 
-(* Lookup the type and value of the given variable *)
-val lookup_var : TT.var -> (TT.tm option * TT.ty) m
+(* Lookup the type of a variable *)
+val lookup_ty : TT.var -> TT.ty m
 
-(* Lookup the information associated with a variable *)
-val lookup_var_ : TT.var -> (TT.tm_ option * TT.ty_) m
+(* Lookup the type of a variable *)
+val lookup_ty_ : TT.var -> TT.ty_ m
 
+(* Lookup the definition of a variable, if any *)
+val lookup_def : TT.var -> TT.tm option m
+
+(* Lookup the definition of a variable, if any *)
+val lookup_def_ : TT.var -> TT.tm_ option m
+
+(* Lookup the entry information associated with a variable. *)
+val lookup_entry : TT.var -> entry m
+
+(* Map a concrete name to the corresponding variable, if any *)
 val lookup_ident : string -> TT.var option m
 
 (* Run a computation in a context extended with a variable, passing it the newly
    created variable. It is the callers responsibility that the result be valid in
    the original context. *)
+
+(* Currently does not seem to be used. *)
 (* val with_var_ : string -> TT.ty_ -> ?def:TT.tm_ -> (TT.var -> 'a m) -> 'a m *)
 
 val with_ident : string -> ?def:TT.tm -> TT.ty -> (TT.var -> 'a m) -> 'a m

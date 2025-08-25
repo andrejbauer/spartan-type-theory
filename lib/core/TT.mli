@@ -66,3 +66,9 @@ val unbind : 'a binder -> var * 'a
 
 (** Unbox an entity. *)
 val unbox : 'a Bindlib.box -> 'a
+
+(** Check that the free variables in a term satisfy the given condition *)
+val check_tm_vars : (var -> bool) -> tm -> bool
+
+(** Check that the free variables in a type satisfy the given condition *)
+val check_ty_vars : (var -> bool) -> ty -> bool

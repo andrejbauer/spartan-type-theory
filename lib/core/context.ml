@@ -10,10 +10,20 @@ module VarMap = Map.Make(struct
                     let compare = Bindlib.compare_vars
                   end)
 
-(** A typing context is a list of known identifiers and definitional equalities. *)
+module VarSet = Set.Make(struct
+                    type t = TT.var
+                    let compare = Bindlib.compare_vars
+                end)
+
+type entry =
+  | Free
+  | Meta of (TT.tm -> bool)
+  | Defined of TT.tm
+
+(** A Typing context is a list of known identifiers and definitional equalities. *)
 type t =
   { idents : TT.var IdentMap.t
-  ; vars : (TT.tm option * TT.ty) VarMap.t
+  ; vars : (entry * TT.ty) VarMap.t
   }
 
 type 'a m = t -> t * 'a
@@ -43,46 +53,79 @@ let penv _ = Bindlib.empty_ctxt
 
 let define v def ctx =
   match VarMap.find v ctx.vars with
-  | (Some _, _) ->
-    (* The variable already is defined, this shouldn't happen.
-       We need proper error reporting. *)
+
+  | (Free | Defined _), _ ->
+    (* We need proper error reporting. *)
     assert false
-  | (None, ty) ->
-    let ctx = { ctx with vars = VarMap.add v (Some def, ty) ctx.vars } in
+
+  | Meta chk, ty ->
+    assert (chk def) ;
+    let ctx = { ctx with vars = VarMap.add v (Defined def, ty) ctx.vars } in
     ctx, ()
 
-let extend_var_ x v ?def_ ty_ {idents;vars} =
-  let ty = Bindlib.unbox ty_
-  and def = Option.map Bindlib.unbox def_ in
-  { idents = IdentMap.add x v idents
-  ; vars = VarMap.add v (def, ty) vars
-  }
+(* let extend_var_ x v ~entry ty_ {idents;vars} = *)
+(*   let ty = Bindlib.unbox ty_ *)
+(*   and def = Option.map Bindlib.unbox def_ in *)
+(*   { idents = IdentMap.add x v idents *)
+(*   ; vars = VarMap.add v (entry, ty) vars *)
+(*   } *)
 
-let extend_var x v ?def ty {idents; vars} =
+let _extend_var x v ent ty {idents; vars} =
   { idents = IdentMap.add x v idents
-  ; vars = VarMap.add v (def, ty) vars
+  ; vars = VarMap.add v (ent, ty) vars
   }
 
 let extend x ?def ty ctx =
   let v = TT.fresh_var x in
-  v, extend_var x v ?def ty ctx
+  let ent =
+    match def with
+    | None -> Free
+    | Some e -> Defined e
+  in
+  v, _extend_var x v ent ty ctx
 
 let lookup_ident x ctx = ctx, IdentMap.find_opt x ctx.idents
 
-let lookup_var v ctx = ctx, VarMap.find v ctx.vars
+let lookup_entry v ctx =
+  let ent, _ = VarMap.find v ctx.vars in
+  ctx, ent
 
-let lookup_var_ v ctx =
-  let (def, t) = VarMap.find v ctx.vars in
-  ctx, (Option.map TT.lift_tm def, TT.lift_ty t)
+let lookup_ty v ctx =
+  let _, ty = VarMap.find v ctx.vars in
+  ctx, ty
+
+let lookup_ty_ v ctx =
+  let _, ty = VarMap.find v ctx.vars in
+  let ty_ = TT.lift_ty ty in
+  ctx, ty_
+
+let lookup_def v ctx =
+  match VarMap.find v ctx.vars with
+  | (Meta _ | Free), _-> ctx, None
+  | Defined e, _ -> ctx, Some e
+
+let lookup_def_ v ctx =
+  match VarMap.find v ctx.vars with
+  | (Meta _ | Free), _-> ctx, None
+  | Defined e, _ ->
+    let e_ = TT.lift_tm e in
+    ctx, Some e_
 
 let with_var v ?def t (c : 'a m) ctx =
   let x = Bindlib.name_of v in
-  let local_ctx = extend_var x v ?def t ctx in
+  let ent = match def with None -> Free | Some e -> Defined e in
+  let local_ctx = _extend_var x v ent t ctx in
   c local_ctx
 
-let with_ident_ x ?def ty (c : TT.var -> 'a m) ctx =
+let with_ident_ x ?def ty_ (c : TT.var -> 'a m) ctx =
   let v = TT.fresh_var x in
-  let local_ctx = extend_var_ x v ?def_:def ty ctx in
+  let ent =
+    match def with
+    | None -> Free
+    | Some e_ -> Defined (TT.unbox e_)
+  in
+  let ty = TT.unbox ty_ in
+  let local_ctx = _extend_var x v ent ty ctx in
   c v local_ctx
 
 let with_ident x ?def ty (c : TT.var -> 'a m) ctx =

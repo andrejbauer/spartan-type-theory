@@ -77,7 +77,7 @@ and equal_neutral e1 e2 =
 
   | TT.Var x, TT.Var y ->
      if Bindlib.eq_vars x y then
-       let* (_, t) = Context.lookup_var x in
+       let* t = Context.lookup_ty x in
        return (Some t)
      else
        return None

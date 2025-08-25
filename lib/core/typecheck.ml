@@ -54,7 +54,7 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
        Context.lookup_ident x >>= function
        | None -> error ~loc (UnknownIdent x)
        | Some v ->
-          let* (_, t) = Context.lookup_var_ v in
+          let* t = Context.lookup_ty_ v in
           return (TT.var_ v, t)
      end
 
@@ -71,7 +71,7 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
     Context.with_ident_ x u
       (fun v ->
          let* (e, t) = infer_ e in
-         let* (def, _) = Context.lookup_var v in
+         let* def = Context.lookup_def v in
          match def with
          | None -> error ~loc (UnsolvedMeta x)
          | Some e' ->
@@ -145,7 +145,7 @@ and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
     Context.with_ident_ x u
       (fun v ->
          let* e = check_ e ty in
-         let* (def, _) = Context.lookup_var v in
+         let* def = Context.lookup_def v in
          match def with
          | None -> error ~loc (UnsolvedMeta x)
          | Some e' ->

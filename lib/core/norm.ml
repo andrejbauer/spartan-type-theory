@@ -14,9 +14,9 @@ let rec norm_tm ~strategy e =
 
   | TT.Var x ->
     begin
-      Context.lookup_var x >>= function
-      | (None, _) -> return e
-      | (Some e, _) -> norm_tm ~strategy e
+      Context.lookup_def x >>= function
+      | None -> return e
+      | Some e -> norm_tm ~strategy e
     end
 
   | TT.Let (e1, t, e2) ->
