@@ -10,6 +10,7 @@ and tm' =
   | Lambda of (string * ty option) * tm
   | Apply of tm * tm
   | Ascribe of tm * ty
+  | Unify of tm * tm * tm
 
 (* Parsed type (equal to tmession). *)
 and ty = tm

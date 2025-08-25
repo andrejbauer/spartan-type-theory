@@ -19,7 +19,7 @@ open Util
 
 (* Expressions *)
 %token LET IN
-%token META
+%token META UNIFY WITH
 %token TYPE
 %token PROD
 %token LAMBDA
@@ -103,6 +103,9 @@ term_:
 
   | META x=var_name COLON e1=term IN e2=term
     { Syntax.Meta (x, e1, e2) }
+
+  | UNIFY e1=term WITH e2=term IN e3=term
+    { Syntax.Unify (e1, e2, e3) }
 
   | e=infix_term COLON t=term
     { Syntax.Ascribe (e, t) }

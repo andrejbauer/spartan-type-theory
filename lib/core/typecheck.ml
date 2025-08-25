@@ -17,6 +17,7 @@ type type_error =
   | FunctionExpected of TT.ty
   | CannotInferArgument of string
   | UnsolvedMeta of string
+  | UnificationFailed
 
 exception Error of type_error Location.t
 
@@ -46,6 +47,9 @@ let print_error ~penv err ppf =
 
   | UnsolvedMeta x ->
     Format.fprintf ppf "unsolved meta %s" x
+
+  | UnificationFailed ->
+    Format.fprintf ppf "unification failed"
 
 open Context.Monad
 
@@ -122,6 +126,16 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
      let* e = check_ e (TT.unbox t) in
      return (e, t)
 
+  | ISyntax.Unify(e1, e2, e3) ->
+    begin
+      let* (e1, t) = infer_ e1 in
+      let t = TT.unbox t in
+      let* e2 = check_ e2 t in
+      Unify.unify_tm_at (TT.unbox e1) (TT.unbox e2) t >>= function
+      | true -> infer_ e3
+      | false -> error ~loc UnificationFailed
+    end
+
 (** [check ctx e ty] checks that [e] has type [ty] in context [ctx].
     It returns the processed expression [e]. *)
 and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
@@ -172,6 +186,15 @@ and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
        | false -> error ~loc (TypeExpected (ty, ty'))
      end
 
+  | ISyntax.Unify (e1, e2, e3) ->
+    begin
+      let* (e1, t) = infer_ e1 in
+      let t = TT.unbox t in
+      let* e2 = check_ e2 t in
+      Unify.unify_tm_at (TT.unbox e1) (TT.unbox e2) t >>= function
+      | true -> check_ e3 ty
+      | false -> error ~loc UnificationFailed
+    end
 
 (** [check_ty ctx t] checks that [t] is a type in context [ctx]. It returns the processed
    type [t]. *)
