@@ -11,6 +11,7 @@ type type_error =
   | TypeExpectedButFunction of TT.ty
   | FunctionExpected of TT.ty
   | CannotInferArgument of string
+  | UnsolvedMeta of string
 
 exception Error of type_error Location.t
 
@@ -23,21 +24,23 @@ let print_error ~penv err ppf =
   | UnknownIdent x -> Format.fprintf ppf "unknown identifier %s" x
 
   | TypeExpected (ty_expected, ty_actual) ->
-     Format.fprintf ppf "this expression should have type %t but has type %t"
-                        (Print.ty ~penv ty_expected)
-                        (Print.ty ~penv ty_actual)
+    Format.fprintf ppf "this expression should have type %t but has type %t"
+                       (Print.ty ~penv ty_expected)
+                       (Print.ty ~penv ty_actual)
 
   | TypeExpectedButFunction ty ->
-     Format.fprintf ppf "this expression is a function but should have type %t"
+    Format.fprintf ppf "this expression is a function but should have type %t"
                         (Print.ty ~penv ty)
 
   | FunctionExpected ty ->
-     Format.fprintf ppf "this expression should be a function but has type %t"
-                        (Print.ty ~penv ty)
+    Format.fprintf ppf "this expression should be a function but has type %t"
+                       (Print.ty ~penv ty)
 
   | CannotInferArgument x ->
-     Format.fprintf ppf "cannot infer the type of %s" x
+    Format.fprintf ppf "cannot infer the type of %s" x
 
+  | UnsolvedMeta x ->
+    Format.fprintf ppf "unsolved meta %s" x
 
 open Context.Monad
 
@@ -62,6 +65,19 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
          let* (e2, t2) = infer_ e2 in
          let t2 = TT.(lift_ty (Bindlib.subst (unbox (bind_var v t2)) (unbox e1))) in
          return TT.(let_ e1 t1 (bind_var v e2), t2))
+
+  | ISyntax.Meta (x, u, e) ->
+    let* u = check_ty_ u in
+    Context.with_ident_ x u
+      (fun v ->
+         let* (e, t) = infer_ e in
+         let* (def, _) = Context.lookup_var v in
+         match def with
+         | None -> error ~loc (UnsolvedMeta x)
+         | Some e' ->
+           let t = TT.(lift_ty (Bindlib.subst (unbox (bind_var v t)) e')) in
+           return TT.(let_ (lift_tm e') u (bind_var v e), t)
+      )
 
   | ISyntax.Type ->
      return TT.(type_, ty_type_)
@@ -123,6 +139,18 @@ and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
        (fun v ->
          let* e2 = check_ e2 ty in
          return TT.(let_ e1 t1 (bind_var v e2)))
+
+  | ISyntax.Meta (x, u, e) ->
+    let* u = check_ty_ u in
+    Context.with_ident_ x u
+      (fun v ->
+         let* e = check_ e ty in
+         let* (def, _) = Context.lookup_var v in
+         match def with
+         | None -> error ~loc (UnsolvedMeta x)
+         | Some e' ->
+           return TT.(let_ (lift_tm e') u (bind_var v e))
+      )
 
   | ISyntax.Lambda ((_, Some _), _)
   | ISyntax.Apply _

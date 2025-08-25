@@ -7,6 +7,7 @@ type tm = tm' Location.t
 and tm' =
   | Var of string
   | Let of string * tm * tm
+  | Meta of string * ty * tm
   | Type
   | Prod of (string * ty) * ty
   | Lambda of (string * ty option) * tm

@@ -19,6 +19,7 @@ open Util
 
 (* Expressions *)
 %token LET IN
+%token META
 %token TYPE
 %token PROD
 %token LAMBDA
@@ -99,6 +100,9 @@ term_:
 
   | LET x=var_name COLONEQ e1=term IN e2=term
     { Syntax.Let (x, e1, e2) }
+
+  | META x=var_name COLON e1=term IN e2=term
+    { Syntax.Meta (x, e1, e2) }
 
   | e=infix_term COLON t=term
     { Syntax.Ascribe (e, t) }
