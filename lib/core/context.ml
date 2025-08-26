@@ -7,7 +7,7 @@ module IdentMap = Map.Make(struct
 
 module VarMap = Map.Make(struct
                     type t = TT.var
-                    let compare = Bindlib.compare_vars
+                    let compare = TT.compare_vars
                   end)
 
 type entry =
@@ -57,10 +57,11 @@ let define v def ctx =
     assert false
 
   | Meta chk, ty ->
-    assert (chk def) ;
-    let ctx = { ctx with vars = VarMap.add v (Defined def, ty) ctx.vars } in
-    ctx, ()
-
+    if chk def then
+      let ctx = { ctx with vars = VarMap.add v (Defined def, ty) ctx.vars } in
+      ctx, true
+    else
+      ctx, false
 
 let _extend_var x v ent ty {idents; vars} =
   { idents = IdentMap.add x v idents

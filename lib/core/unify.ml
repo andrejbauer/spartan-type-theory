@@ -63,49 +63,50 @@ and unify_tm e1 e2 =
      assert false
 
   | TT.(Var _ | Apply _), TT.(Var _ | Apply _) ->
-     begin
-       unify_neutral e1 e2 >>= function
-       | None -> return false
-       | Some _ -> return true
-     end
+    unify_spine e1 e2
 
   | TT.(Var _ | Type | Prod _ | Lambda _ | Apply _), _ ->
     return false
 
-and unify_neutral e1 e2 =
-  match e1, e2 with
+and unify_spine e1 e2 =
+  let x1, es1 = TT.as_spine e1
+  and x2, es2 = TT.as_spine e2 in
+  let* ent1 = Context.lookup_entry x1 in
+  let* ent2 = Context.lookup_entry x2 in
+  match ent1, es1, ent2, es2 with
 
-  | TT.Var x, TT.Var y ->
-     if Bindlib.eq_vars x y then
-       let* t = Context.lookup_ty x in
-       return (Some t)
-     else
-       return None
+  | (Context.Meta _, [], _, _) when not (TT.eq_vars x1 x2) ->
+      Context.define x1 e2
 
-  | TT.Apply (e1, e1'), TT.Apply (e2, e2') ->
-       begin
-         unify_neutral e1 e2 >>= function
-         | None -> return None
-         | Some t ->
+  | (_, _, Context.Meta _, []) when not (TT.eq_vars x1 x2) ->
+      Context.define x2 e1
+
+  | Context.(Free | Meta _), _, Context.(Free | Meta _), _ ->
+    if not (TT.eq_vars x1 x2) then
+      return false
+    else begin
+      let rec fold t es1 es2 =
+        match es1, es2 with
+        | [], [] -> return true
+        | ([], _::_) | (_::_, []) -> return false
+
+        | e1 :: es1, e2 :: es2 ->
+          Norm.as_prod t >>= function
+          | None -> return false
+          | Some (t, u) ->
             begin
-              Norm.as_prod t >>= function
-              | None -> return None
-              | Some (t, u) ->
-                 begin
-                   unify_tm_at e1' e2' t >>= function
-                   | false -> return None
-                   | true -> return @@ Some (Bindlib.subst u e1')
-                 end
+            unify_tm_at e1 e2 t >>= function
+            | false -> return false
+            | true -> fold (Bindlib.subst u e1) es1 es2
+          end
+      in
+      let* t = Context.lookup_ty x1 in
+      fold t es1 es2
+    end
 
-            end
-       end
-
-  | TT.(Var _ | Apply _), _
-  | _, TT.(Var _ | Apply _) ->
-     return None
-
-  | TT.(Type | Prod _ | Lambda _ | Let _), _ ->
-     assert false
+  | (Context.Defined _, _, _, _) | (_, _, Context.Defined _, _) ->
+    (* A neutral term cannot have a defined head *)
+    assert false
 
 and unify_ty (TT.Ty ty1) (TT.Ty ty2) =
   unify_tm_at ty1 ty2 TT.(Ty Type)

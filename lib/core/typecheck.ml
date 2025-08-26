@@ -4,11 +4,6 @@ module ISyntax = Parsing.Syntax
 
 module Location = Util.Location
 
-module VarSet = Set.Make(struct
-    type t = TT.var
-    let compare = Bindlib.compare_vars
-  end)
-
 (** Type errors *)
 type type_error =
   | UnknownIdent of string
@@ -181,7 +176,7 @@ and check_ ({Location.data=e'; loc} as e) (ty : TT.ty) : TT.tm_ Context.m =
      begin
        let* (e, ty'_) = infer_ e in
        let ty' = TT.unbox ty'_ in
-       Equal.equal_ty ty ty' >>= function
+       Unify.unify_ty ty ty' >>= function
        | true -> return e
        | false -> error ~loc (TypeExpected (ty, ty'))
      end

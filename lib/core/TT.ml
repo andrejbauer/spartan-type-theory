@@ -27,6 +27,10 @@ type tm_ = tm Bindlib.box
 (** A boxed type *)
 type ty_ = ty Bindlib.box
 
+let eq_vars = Bindlib.eq_vars
+
+let compare_vars = Bindlib.compare_vars
+
 let box_binder = Bindlib.box_binder
 
 (* Constructors for boxed terms and types *)
@@ -110,3 +114,12 @@ let rec check_tm_vars p = function
     check_tm_vars p e2
 
 and check_ty_vars p (Ty e) = check_tm_vars p e
+
+let as_spine e =
+  let rec fold es = function
+    | Var x -> x, es
+    | Apply (e1, e2) -> fold (e2 :: es) e1
+    | (Let _ | Type | Prod _ | Lambda _) ->
+      assert false
+  in
+  fold [] e

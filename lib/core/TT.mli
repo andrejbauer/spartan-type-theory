@@ -27,6 +27,12 @@ type ty_ = ty Bindlib.box
 (** A boxed binder, in the sense of [Bindlib]. *)
 type 'a binder_ = 'a binder Bindlib.box
 
+(** Compare variables for equality (copy of [Bindlib.eq_vars]). *)
+val eq_vars : var -> var -> bool
+
+(** Compare variables (copy of [Bindlib.compare_vars]). *)
+val compare_vars : var -> var -> int
+
 (** Boxed constructors *)
 
 val var_ : var -> tm_
@@ -72,3 +78,5 @@ val check_tm_vars : (var -> bool) -> tm -> bool
 
 (** Check that the free variables in a type satisfy the given condition *)
 val check_ty_vars : (var -> bool) -> ty -> bool
+
+val as_spine : tm -> var * tm list

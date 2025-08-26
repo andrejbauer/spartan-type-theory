@@ -32,9 +32,10 @@ val run : t -> 'a m -> t * 'a
    of the current context. *)
 val elem : (TT.var -> bool) m
 
-(* Assign a value to a meta-variable. It is an error to try to assign a value
-   whose free variables are not contained in the context of the meta-variable. *)
-val define : TT.var -> TT.tm -> unit m
+(* Assign a value to a meta-variable and report whether the assignment
+   succeeded. It is an error to attempt to assign a variable which
+   is not a meta-variable. *)
+val define : TT.var -> TT.tm -> bool m
 
 (* Extend the context with a variable and return it *)
 val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t
