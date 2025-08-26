@@ -75,11 +75,11 @@ and unify_spine e1 e2 =
   let* ent2 = Context.lookup_entry x2 in
   match ent1, es1, ent2, es2 with
 
-  | (Context.Meta _, [], _, _) when not (TT.eq_vars x1 x2) ->
-      Context.define x1 e2
+  | (Context.Meta _, es, _, _) when not (TT.eq_vars x1 x2) ->
+      unify_meta x1 es e2
 
-  | (_, _, Context.Meta _, []) when not (TT.eq_vars x1 x2) ->
-      Context.define x2 e1
+  | (_, _, Context.Meta _, es) when not (TT.eq_vars x1 x2) ->
+      unify_meta x2 es e1
 
   | Context.(Free | Meta _), _, Context.(Free | Meta _), _ ->
     if not (TT.eq_vars x1 x2) then
@@ -110,3 +110,31 @@ and unify_spine e1 e2 =
 
 and unify_ty (TT.Ty ty1) (TT.Ty ty2) =
   unify_tm_at ty1 ty2 TT.(Ty Type)
+
+and unify_meta x es e' =
+  let rec abstract t ys = function
+    | [] -> return @@ Some (TT.lift_tm e')
+    | e :: es ->
+      begin
+        Norm.as_prod t >>= function
+          | None -> assert false
+          | Some (u, t) ->
+            Norm.as_var e >>= function
+            | None -> return None
+            | Some y ->
+              if List.exists (TT.eq_vars y) ys then
+                return None
+              else begin
+                abstract (Bindlib.subst t (TT.Var y)) (y :: ys) es >>= function
+                | None -> return None
+                | Some e' ->
+                  let e' = TT.lambda_ (TT.lift_ty u) (Bindlib.bind_var y e') in
+                  return (Some e')
+              end
+
+      end
+  in
+  let* t = Context.lookup_ty x in
+  abstract t [] es >>= function
+  | None -> return false
+  | Some e' -> Context.define x (TT.unbox e')

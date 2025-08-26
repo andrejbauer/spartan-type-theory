@@ -20,6 +20,11 @@ module Monad : sig
   (* Return a pure value *)
   val return : 'b -> 'b m
 
+  (* Monadic conjunction *)
+  val (&&&) : bool m -> bool m -> bool m
+
+  (* Monadic disjunction *)
+  val (|||) : bool m -> bool m -> bool m
 end
 
 (* The initial, empty typing context. *)
@@ -28,16 +33,12 @@ val initial : t
 (* Run a computation in the given context. *)
 val run : t -> 'a m -> t * 'a
 
-(* Return a function which checks whether a variable is an element
-   of the current context. *)
-val elem : (TT.var -> bool) m
-
 (* Assign a value to a meta-variable and report whether the assignment
    succeeded. It is an error to attempt to assign a variable which
    is not a meta-variable. *)
 val define : TT.var -> TT.tm -> bool m
 
-(* Extend the context with a variable and return it *)
+(* Extend the context with an identifier, return the created variable and the new context *)
 val extend : string -> ?def:TT.tm -> TT.ty -> t -> TT.var * t
 
 (* The list of identifiers which should not be used for printing bound variables. *)
@@ -72,6 +73,21 @@ val with_ident : string -> ?def:TT.tm -> TT.ty -> (TT.var -> 'a m) -> 'a m
 
 val with_ident_ : string -> ?def:TT.tm_ -> TT.ty_ -> (TT.var -> 'a m) -> 'a m
 
+(* Extend the context with a variable, which must be guaranteed to be fresh,
+   and run a computation in the extended context. The result must be valid
+   in the original context. *)
 val with_var : TT.var -> ?def:TT.tm -> TT.ty -> 'a m -> 'a m
 
 val with_meta_ : string -> TT.ty_ -> chk:(TT.tm -> bool) -> (TT.var -> 'a m) -> 'a m
+
+(* Check that the free variables occuring in the term exist in the current context *)
+val well_scoped_tm : TT.tm -> bool m
+
+(* Like [well_scoped_tm] but it captures the current context and uses it to check well-scoping. *)
+val well_scoped_tm' : (TT.tm -> bool) m
+
+(* Check that the free variables occurting in a type exist in the current context *)
+val well_scoped_ty : TT.ty -> bool m
+
+(* Like [well_scoped_ty] but it captures the current context and uses it to check well-scoping. *)
+val well_scoped_ty' : (TT.ty -> bool) m

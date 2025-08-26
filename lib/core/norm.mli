@@ -8,3 +8,6 @@ val norm_ty : strategy:strategy -> TT.ty -> TT.ty Context.m
 
 (** Convert a type to a product *)
 val as_prod : TT.ty -> (TT.ty * TT.ty TT.binder) option Context.m
+
+(** Convert a term to a variable *)
+val as_var : TT.tm -> TT.var option Context.m

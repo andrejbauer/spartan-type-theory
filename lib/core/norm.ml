@@ -62,3 +62,8 @@ let as_prod t =
   match t' with
   | TT.Prod (t, u) -> return @@ Some (t, u)
   | _ -> return None
+
+let as_var e =
+  norm_tm ~strategy:WHNF e >>= function
+  | TT.Var x -> return (Some x)
+  | _ -> return None

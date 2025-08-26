@@ -72,8 +72,8 @@ let rec infer_ {Location.data=e'; loc} : (TT.tm_ * TT.ty_) Context.m =
 
   | ISyntax.Meta (x, u, e) ->
     let* u = check_ty_ u in
-    let* elem = Context.elem in
-    Context.with_meta_ x u ~chk:(TT.check_tm_vars elem)
+    let* chk = Context.well_scoped_tm' in
+    Context.with_meta_ x u ~chk
       (fun v ->
          let* (e, t) = infer_ e in
          let* def = Context.lookup_def v in

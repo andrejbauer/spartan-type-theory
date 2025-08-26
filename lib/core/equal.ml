@@ -2,16 +2,6 @@
 
 open Context.Monad
 
-(* Monadic conjunction *)
-let ( &&& ) c1 c2 =
-  let* b = c1 in
-  if b then c2 else return false
-
-(* Monadic disjunction *)
-let ( ||| ) c1 c2 =
-  let* b = c1 in
-  if b then return true else c2
-
 (** Compare expressions [e1] and [e2] at type [ty]? *)
 let rec equal_tm_at e1 e2 ty =
   (* short-circuit *)

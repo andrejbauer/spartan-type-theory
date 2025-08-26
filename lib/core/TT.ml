@@ -89,32 +89,6 @@ let fresh_var x = Bindlib.new_var (fun x -> Var x) x
 
 let anonymous_var () = fresh_var (Name.anonymous ())
 
-(** Check that the free variables all satisfy a condition. *)
-let rec check_tm_vars p = function
-
-  | Var x -> p x
-
-  | Let (e1, ty, e2) ->
-    check_tm_vars p e1 &&
-    check_ty_vars p ty &&
-    (let _, e2 = unbind e2 in check_tm_vars p e2)
-
-  | Type -> false
-
-  | Prod (ty1, ty2) ->
-    check_ty_vars p ty1 &&
-    (let _, ty2 = unbind ty2 in check_ty_vars p ty2)
-
-  | Lambda (ty, e) ->
-    check_ty_vars p ty &&
-    (let _, e = unbind e in check_tm_vars p e)
-
-  | Apply (e1, e2) ->
-    check_tm_vars p e1 &&
-    check_tm_vars p e2
-
-and check_ty_vars p (Ty e) = check_tm_vars p e
-
 let as_spine e =
   let rec fold es = function
     | Var x -> x, es
