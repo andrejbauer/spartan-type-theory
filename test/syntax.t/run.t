@@ -24,3 +24,5 @@
     id S c in u
        : Π (S : Type), Π (c : S), Π (T : Π (_4 : S), Type),
            Π (u : T c), T (id S (id S c))
+  λ (a : A), let C := A in ((λ (x : C), x) a)
+       : Π (a : A), A

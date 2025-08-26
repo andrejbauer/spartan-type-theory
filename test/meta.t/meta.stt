@@ -1,0 +1,13 @@
+axiom A : Type
+axiom P : A → Type
+axiom f : ∏ (x : A), P x
+
+check λ (a : A) ⇒ meta X : Type in (λ (x : X) ⇒ x) a
+
+check meta X : Type in λ (a : A) ⇒ (λ (x : X) ⇒ x) a
+
+check meta g : A → A → A in λ (a b : A) ⇒ unify g a b with b in g
+
+check λ (a b : A) ⇒ meta g : A → A → A in unify g a b with b in g
+
+check λ (a b : A) ⇒ meta g : ∏ (x y : A), P x in unify g a b with f a in g
