@@ -1,0 +1,3 @@
+check λ (B : Type) ⇒ meta A : Type in unify A with B in A
+
+check meta A : Type in λ (B : Type) ⇒ unify A with B in A

@@ -11,3 +11,9 @@ check meta g : A → A → A in λ (a b : A) ⇒ unify g a b with b in g
 check λ (a b : A) ⇒ meta g : A → A → A in unify g a b with b in g
 
 check λ (a b : A) ⇒ meta g : ∏ (x y : A), P x in unify g a b with f a in g
+
+check meta h : A → A → A in λ (x y : A) ⇒ unify h x y with x in h
+
+check meta h : A → A → A in λ (x y : A) ⇒ unify h x y with x in y
+
+

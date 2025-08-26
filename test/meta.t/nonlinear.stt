@@ -1,0 +1,3 @@
+axiom A : Type
+
+check meta f : A → A → A in λ (x : A) ⇒ unify f x x with x in f
