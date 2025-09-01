@@ -31,7 +31,7 @@ Top-level commands:
 
 * The OPAM packages `dune`, `menhir`, `mehirLib`, `sedlex` and `bindlib`:
 
-        opam install dune menhir menihirLib sedlex bindlib
+        opam install dune menhir menhirLib sedlex bindlib
 
 * It is recommended that you also install the `rlwrap` or `ledit` command line wrapper.
 

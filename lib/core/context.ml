@@ -1,5 +1,8 @@
 (** Typing context and definitional equalities. *)
 
+open Effect
+open Effect.Deep
+
 module IdentMap = Map.Make(struct
                     type t = string
                     let compare = String.compare
@@ -21,29 +24,22 @@ type t =
   ; vars : (entry * TT.ty) VarMap.t
   }
 
-type 'a m = t -> t * 'a
+(* Temporarily the identity monad, as we're moving state to a handler. *)
+type 'a m = 'a
 
 module Monad =
 struct
-  let ( let* ) : 'a 'b . 'a m -> ('a -> 'b m) -> 'b m =
-    fun c1 c2 ctx ->
-    let ctx, v1 = c1 ctx in
-    c2 v1 ctx
+  let ( let* ) : 'a 'b . 'a m -> ('a -> 'b m) -> 'b m = fun x f -> f x
 
   let ( >>= ) = ( let* )
 
-  let return : 'a . 'a -> 'a m =
-    fun v t -> (t, v)
+  let return : 'a . 'a -> 'a m = fun v -> v
 
   (* Monadic conjunction *)
-  let ( &&& ) c1 c2 =
-    let* b = c1 in
-    if b then c2 else return false
+  let ( &&& ) : bool m -> bool m -> bool m = ( && )
 
   (* Monadic disjunction *)
-  let ( ||| ) c1 c2 =
-    let* b = c1 in
-    if b then return true else c2
+  let ( ||| ) : bool m -> bool m -> bool m = ( || )
 end
 
 (** The initial, empty typing context. *)
@@ -52,12 +48,16 @@ let initial =
   ; vars = VarMap.empty
   }
 
-let run ctx c = c ctx
+type _ Effect.t +=
+    | Lookup : TT.var -> (entry * TT.ty) Effect.t
+    | LookupIdent : string -> TT.var option Effect.t
+    | Define : TT.var * TT.tm -> bool Effect.t
+    | Context : t Effect.t
 
 let penv _ = Bindlib.empty_ctxt
 
 let exists x ctx =
-  ctx, VarMap.mem x ctx.vars
+  VarMap.mem x ctx.vars
 
 let _extend_ident_var x v ent ty {idents; vars} =
   { idents = IdentMap.add x v idents
@@ -76,32 +76,65 @@ let extend x ?def ty ctx =
   in
   v, _extend_ident_var x v ent ty ctx
 
-let lookup_ident x ctx = ctx, IdentMap.find_opt x ctx.idents
+let lookup_ident x =
+  perform (LookupIdent x)
 
-let lookup_entry v ctx =
-  let ent, _ = VarMap.find v ctx.vars in
-  ctx, ent
+let lookup_entry v = fst (perform (Lookup v))
 
-let lookup_ty v ctx =
-  let _, ty = VarMap.find v ctx.vars in
-  ctx, ty
+let lookup_ty v =
+  let _, ty = perform (Lookup v) in
+  ty
 
-let lookup_ty_ v ctx =
-  let _, ty = VarMap.find v ctx.vars in
-  let ty_ = TT.lift_ty ty in
-  ctx, ty_
+let lookup_ty_ v =
+  TT.lift_ty (lookup_ty v)
 
-let lookup_def v ctx =
+let lookup_def v =
+  match lookup_entry v with
+  | (Meta _ | Free) -> None
+  | Defined e  -> Some e
+
+let lookup_def_ v =
+  match lookup_def v with
+  | None -> None
+  | Some e -> Some (TT.lift_tm e)
+
+let _define v def ctx =
   match VarMap.find v ctx.vars with
-  | (Meta _ | Free), _-> ctx, None
-  | Defined e, _ -> ctx, Some e
 
-let lookup_def_ v ctx =
-  match VarMap.find v ctx.vars with
-  | (Meta _ | Free), _-> ctx, None
-  | Defined e, _ ->
-    let e_ = TT.lift_tm e in
-    ctx, Some e_
+  | (Free | Defined _), _ ->
+    (* We need proper error reporting. *)
+    assert false
+
+  | Meta chk, ty ->
+    if chk def then
+      let ctx = { ctx with vars = VarMap.add v (Defined def, ty) ctx.vars } in
+      ctx, true
+    else
+      ctx, false
+
+let define x e = perform (Define (x, e))
+
+let run (ctx : t) f x =
+  let ctx = ref ctx in
+  try
+    f x
+  with
+
+  | effect Context, k ->
+     continue k !ctx
+
+  | effect (Lookup v), k ->
+     let res = VarMap.find v !ctx.vars in
+     continue k res
+
+  | effect (Define (x, e)), k ->
+     let ctx', b = _define x e !ctx in
+     ctx := ctx' ;
+     continue k b
+
+  | effect (LookupIdent x), k ->
+     let v = IdentMap.find_opt x !ctx.idents in
+     continue k v
 
 let with_var v ?def t (c : 'a m) ctx =
   let ent = match def with None -> Free | Some e -> Defined e in
@@ -119,9 +152,10 @@ let with_ident_ x ?def ty_ (c : TT.var -> 'a m) ctx =
   let local_ctx = _extend_ident_var x v ent ty ctx in
   c v local_ctx
 
-let with_ident x ?def ty (c : TT.var -> 'a m) ctx =
+let with_ident x ?def ty (c : TT.var -> 'a m) =
+  let ctx = perform Context in
   let v, local_ctx = extend x ?def ty ctx in
-  c v local_ctx
+  run local_ctx c v
 
 let with_meta_ x ty_ ~chk c ctx =
   let v = TT.fresh_var x in
@@ -159,20 +193,6 @@ let rec well_scoped_tm e =
 
 and well_scoped_ty (Ty e) = well_scoped_tm e
 
-let well_scoped_tm' ctx = ctx, (fun e -> snd (well_scoped_tm e ctx))
+let well_scoped_tm' = ctx, (fun e -> snd (well_scoped_tm e ctx))
 
-let well_scoped_ty' ctx = ctx, (fun t -> snd (well_scoped_ty t ctx))
-
-let define v def ctx =
-  match VarMap.find v ctx.vars with
-
-  | (Free | Defined _), _ ->
-    (* We need proper error reporting. *)
-    assert false
-
-  | Meta chk, ty ->
-    if chk def then
-      let ctx = { ctx with vars = VarMap.add v (Defined def, ty) ctx.vars } in
-      ctx, true
-    else
-      ctx, false
+let well_scoped_ty' = ctx, (fun t -> snd (well_scoped_ty t ctx))

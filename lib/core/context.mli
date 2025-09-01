@@ -31,7 +31,7 @@ end
 val initial : t
 
 (* Run a computation in the given context. *)
-val run : t -> 'a m -> t * 'a
+val run : t -> ('a -> 'b m) -> 'a -> t * 'b
 
 (* Assign a value to a meta-variable and report whether the assignment
    succeeded. It is an error to attempt to assign a variable which
