@@ -26,7 +26,7 @@ let rec norm_tm ~strategy e =
        | CBV -> norm_tm ~strategy e1
      in
      let (v, e2) = TT.unbind e2 in
-     Context.with_var v ~def:e1 t (norm_tm ~strategy e2)
+     Context.with_var v ~def:e1 t (fun () -> norm_tm ~strategy e2)
 
   | TT.Prod _ ->
      return e

@@ -56,7 +56,8 @@ type _ Effect.t +=
 
 let penv _ = Bindlib.empty_ctxt
 
-let exists x ctx =
+let exists x =
+  let ctx = perform Context in
   VarMap.mem x ctx.vars
 
 let _extend_ident_var x v ent ty {idents; vars} =
@@ -116,32 +117,39 @@ let define x e = perform (Define (x, e))
 
 let run (ctx : t) f x =
   let ctx = ref ctx in
-  try
-    f x
-  with
+  let y =
+    try
+      f x
+    with
 
-  | effect Context, k ->
-     continue k !ctx
+    | effect Context, k ->
+       continue k !ctx
 
-  | effect (Lookup v), k ->
-     let res = VarMap.find v !ctx.vars in
-     continue k res
+    | effect (Lookup v), k ->
+       let res = VarMap.find v !ctx.vars in
+       continue k res
 
-  | effect (Define (x, e)), k ->
-     let ctx', b = _define x e !ctx in
-     ctx := ctx' ;
-     continue k b
+    | effect (Define (x, e)), k ->
+       let ctx', b = _define x e !ctx in
+       ctx := ctx' ;
+       continue k b
 
-  | effect (LookupIdent x), k ->
-     let v = IdentMap.find_opt x !ctx.idents in
-     continue k v
+    | effect (LookupIdent x), k ->
+       let v = IdentMap.find_opt x !ctx.idents in
+       continue k v
+  in
+  !ctx, y
 
-let with_var v ?def t (c : 'a m) ctx =
+let run' ctx f x = snd (run ctx f x)
+
+let with_var v ?def t c =
+  let ctx = perform Context in
   let ent = match def with None -> Free | Some e -> Defined e in
   let local_ctx = _extend_var v ent t ctx in
-  c local_ctx
+  run' local_ctx c ()
 
-let with_ident_ x ?def ty_ (c : TT.var -> 'a m) ctx =
+let with_ident_ x ?def ty_ (c : TT.var -> 'a m) =
+  let ctx = perform Context in
   let v = TT.fresh_var x in
   let ent =
     match def with
@@ -150,18 +158,19 @@ let with_ident_ x ?def ty_ (c : TT.var -> 'a m) ctx =
   in
   let ty = TT.unbox ty_ in
   let local_ctx = _extend_ident_var x v ent ty ctx in
-  c v local_ctx
+  run' local_ctx c v
 
 let with_ident x ?def ty (c : TT.var -> 'a m) =
   let ctx = perform Context in
   let v, local_ctx = extend x ?def ty ctx in
-  run local_ctx c v
+  run' local_ctx c v
 
-let with_meta_ x ty_ ~chk c ctx =
+let with_meta_ x ty_ ~chk c =
+  let ctx = perform Context in
   let v = TT.fresh_var x in
   let ty = TT.unbox ty_ in
   let local_ctx = _extend_ident_var x v (Meta chk) ty ctx in
-  c v local_ctx
+  run' local_ctx c v
 
 (** Check that the free variables all satisfy a condition. *)
 let rec well_scoped_tm e =
@@ -174,18 +183,18 @@ let rec well_scoped_tm e =
   | TT.Let (e1, ty, e2) ->
     well_scoped_tm e1 &&&
     well_scoped_ty ty &&&
-    (let x, e2 = TT.unbind e2 in with_var x ty (well_scoped_tm e2))
+    (let x, e2 = TT.unbind e2 in with_var x ty (fun () -> well_scoped_tm e2))
 
   | TT.Type ->
     return false
 
   | TT.Prod (ty1, ty2) ->
     well_scoped_ty ty1 &&&
-    (let x, ty2 = TT.unbind ty2 in with_var x ty1 (well_scoped_ty ty2))
+    (let x, ty2 = TT.unbind ty2 in with_var x ty1 (fun () -> well_scoped_ty ty2))
 
   | TT.Lambda (ty, e) ->
     well_scoped_ty ty &&&
-    (let x, e = TT.unbind e in with_var x ty (well_scoped_tm e))
+    (let x, e = TT.unbind e in with_var x ty (fun () -> well_scoped_tm e))
 
   | TT.Apply (e1, e2) ->
     well_scoped_tm e1 &&&
@@ -193,6 +202,6 @@ let rec well_scoped_tm e =
 
 and well_scoped_ty (Ty e) = well_scoped_tm e
 
-let well_scoped_tm' = ctx, (fun e -> snd (well_scoped_tm e ctx))
+let well_scoped_tm' = well_scoped_tm
 
-let well_scoped_ty' = ctx, (fun t -> snd (well_scoped_ty t ctx))
+let well_scoped_ty' = well_scoped_ty

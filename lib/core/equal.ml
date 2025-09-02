@@ -15,9 +15,10 @@ let rec equal_tm_at e1 e2 ty =
        (* Apply function extensionality. *)
        let (x, u) = TT.unbind u in
        Context.with_var x t
-         (let e1 = TT.(Apply (e1, Var x))
-          and e2 = TT.(Apply (e2, Var x)) in
-          equal_tm_at e1 e2 u)
+         (fun () ->
+           let e1 = TT.(Apply (e1, Var x))
+           and e2 = TT.(Apply (e2, Var x)) in
+           equal_tm_at e1 e2 u)
 
     | TT.(Var _ | Type | Apply _) ->
        (* Type-directed phase is done, we compare normal forms. *)
@@ -41,7 +42,7 @@ and equal_tm e1 e2 =
     equal_ty t1 t2 &&&
     begin
       let (x, u1, u2) = Bindlib.unbind2 u1 u2 in
-      Context.with_var x t1 (equal_ty u1 u2)
+      Context.with_var x t1 (fun () -> equal_ty u1 u2)
     end
 
   | TT.Lambda _, TT.Lambda _  ->

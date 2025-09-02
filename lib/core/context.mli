@@ -76,7 +76,7 @@ val with_ident_ : string -> ?def:TT.tm_ -> TT.ty_ -> (TT.var -> 'a m) -> 'a m
 (* Extend the context with a variable, which must be guaranteed to be fresh,
    and run a computation in the extended context. The result must be valid
    in the original context. *)
-val with_var : TT.var -> ?def:TT.tm -> TT.ty -> 'a m -> 'a m
+val with_var : TT.var -> ?def:TT.tm -> TT.ty -> (unit -> 'a m) -> 'a m
 
 val with_meta_ : string -> TT.ty_ -> chk:(TT.tm -> bool) -> (TT.var -> 'a m) -> 'a m
 

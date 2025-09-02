@@ -215,28 +215,28 @@ and toplevel' ~quiet ctx = function
      topfile ~quiet ctx file
 
   | ISyntax.TopDefinition (x, e) ->
-     let ctx, (e, ty) = Context.run ctx (infer e) in
+     let ctx, (e, ty) = Context.run ctx (fun () -> infer e) () in
      let _, ctx = Context.extend x ~def:e ty ctx in
      if not quiet then Format.printf "%s is defined.@." x ;
      ctx
 
   | ISyntax.TopCheck e ->
-     let ctx, (e, ty) = Context.run ctx (infer e) in
+     let ctx, (e, ty) = Context.run ctx (fun () -> infer e) () in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
        (Print.tm ~penv:(Context.penv ctx) e)
        (Print.ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
   | ISyntax.TopEval e ->
-     let ctx, (e, ty) = Context.run ctx (infer e) in
-     let _, e = Context.run ctx (Norm.norm_tm ~strategy:Norm.CBV e) in
+     let ctx, (e, ty) = Context.run ctx (fun () -> infer e) () in
+     let _, e = Context.run ctx (fun () -> Norm.norm_tm ~strategy:Norm.CBV e) () in
      Format.printf "@[<hov>%t@]@\n     : @[<hov>%t@]@."
        (Print.tm ~penv:(Context.penv ctx) e)
        (Print.ty ~penv:(Context.penv ctx) ty) ;
      ctx
 
   | ISyntax.TopAxiom (x, ty) ->
-     let ctx, ty = Context.run ctx (check_ty ty) in
+     let ctx, ty = Context.run ctx (fun () -> check_ty ty) () in
      let _, ctx = Context.extend x ty ctx in
      if not quiet then Format.printf "%s is assumed.@." x ;
      ctx
