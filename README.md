@@ -1,4 +1,6 @@
-# An implementation of spartan type theory
+# An implementation of spartan type theory (**obsolete**)
+
+**NOTE: This repository has been superseded by [https://github.com/andrejbauer/faux-type-theory]. Please go there.**
 
 This repository shows how to implement a minimalist type theory of the kind that is sometimes
 called “spartan”. The current version is an updated version of the one presented at the
