@@ -1,9 +1,9 @@
 # An implementation of spartan type theory (**obsolete**)
 
-**NOTE: This repository has been superseded by [https://github.com/andrejbauer/faux-type-theory]. Please go there.**
+**NOTE: This repository has been superseded by [Faux type theory](https://github.com/andrejbauer/faux-type-theory).**
 
 This repository shows how to implement a minimalist type theory of the kind that is sometimes
-called “spartan”. The current version is an updated version of the one presented at the
+called “spartan”. The version shown here is an updated version of the one presented at the
 [School and Workshop on Univalent Mathematics](https://unimath.github.io/bham2017/) which took
 place at the University of Birmingham in December 2017.
 
