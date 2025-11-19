@@ -9,7 +9,7 @@ place at the University of Birmingham in December 2017.
 
 ## The type theory
 
-The dependent type theory `spartan` has the following ingridients:
+The dependent type theory `spartan` has the following ingredients:
 
 * A universe `Type` with `Type : Type`.
 * Dependent products, written as `forall (x : T₁), T₂` or `∀ (x : T₁), T₂` or `∏ (x : T₁), T₂`.
@@ -31,7 +31,7 @@ Top-level commands:
 
 * [OCaml](https://ocaml.org) and [OPAM](https://opam.ocaml.org)
 
-* The OPAM packages `dune`, `menhir`, `mehirLib`, `sedlex` and `bindlib`:
+* The OPAM packages `dune`, `menhir`, `menhirLib`, `sedlex` and `bindlib`:
 
         opam install dune menhir menihirLib sedlex bindlib
 
@@ -61,7 +61,7 @@ It is best to first familiarize yourself with the core:
 
 * [`lib/core/TT.ml`](./lib/core/TT.ml) – the core type theory
 * [`lib/core/context.ml`](./lib/core/context.ml) – typing context
-* [`lib/core/typecheck.ml`](./lib/coretypecheck.ml) – type checking and elaboration
+* [`lib/core/typecheck.ml`](./lib/core/typecheck.ml) – type checking and elaboration
 * [`lib/core/norm.ml`](./lib/core/norm.ml) – normalization
 * [`lib/core/equal.ml`](./lib/core/equal.ml) – equality and normalization
 * [`lib/core/toplevel.ml`](./lib/core/toplevel.ml) – top-level commands
